@@ -23,8 +23,9 @@ const CollectionGallery = () => {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [filteredCollections, setFilteredCollections] = useState(collections);
   
-  // Get unique categories
-  const categories = ['all', ...new Set(collections.map(item => item.category))];
+  // Get unique categories and ensure none are empty strings
+  const uniqueCategories = [...new Set(collections.map(item => item.category || 'Uncategorized'))];
+  const categories = ['all', ...uniqueCategories.filter(category => category !== '')];
   
   useEffect(() => {
     let result = [...collections];
@@ -33,8 +34,8 @@ const CollectionGallery = () => {
     if (searchTerm) {
       result = result.filter(item => 
         item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.manufacturer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.category.toLowerCase().includes(searchTerm.toLowerCase())
+        (item.manufacturer && item.manufacturer.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (item.category && item.category.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
     
@@ -55,7 +56,7 @@ const CollectionGallery = () => {
           comparison = a.priceEstimate.marketValue - b.priceEstimate.marketValue;
           break;
         case 'category':
-          comparison = a.category.localeCompare(b.category);
+          comparison = (a.category || '').localeCompare(b.category || '');
           break;
         case 'dateAdded':
         default:
