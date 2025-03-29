@@ -1,8 +1,9 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '../types/collection';
-import { getCurrentUser, loginUser, logoutUser, registerUser } from '../lib/mock-data';
 import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { Session, User as SupabaseUser } from '@supabase/supabase-js';
 
 interface AuthContextType {
   user: User | null;
@@ -16,42 +17,77 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if user is logged in
-    const checkAuth = () => {
-      const currentUser = getCurrentUser();
-      setUser(currentUser);
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, currentSession) => {
+        console.log('Auth state changed:', event);
+        setSession(currentSession);
+        
+        if (currentSession?.user) {
+          setUser({
+            id: currentSession.user.id,
+            email: currentSession.user.email || '',
+            name: currentSession.user.user_metadata.name || 'User',
+            collections: []
+          });
+        } else {
+          setUser(null);
+        }
+      }
+    );
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      console.log('Got session:', currentSession);
+      setSession(currentSession);
+      
+      if (currentSession?.user) {
+        setUser({
+          id: currentSession.user.id,
+          email: currentSession.user.email || '',
+          name: currentSession.user.user_metadata.name || 'User',
+          collections: []
+        });
+      }
+      
       setLoading(false);
+    });
+
+    return () => {
+      subscription.unsubscribe();
     };
-    
-    checkAuth();
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      const user = loginUser(email, password);
-      if (user) {
-        setUser(user);
-        toast({
-          title: "Logged in successfully",
-          description: `Welcome back, ${user.name}!`,
-        });
-        return true;
-      } else {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) {
         toast({
           title: "Login failed",
-          description: "Invalid email or password",
+          description: error.message,
           variant: "destructive",
         });
         return false;
       }
-    } catch (error) {
+
+      toast({
+        title: "Logged in successfully",
+        description: `Welcome back, ${data.user.user_metadata.name || 'User'}!`,
+      });
+      return true;
+    } catch (error: any) {
       toast({
         title: "Login failed",
-        description: "An error occurred during login",
+        description: error.message || "An error occurred during login",
         variant: "destructive",
       });
       return false;
@@ -60,26 +96,52 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const register = async (email: string, name: string, password: string): Promise<boolean> => {
     try {
-      const newUser = registerUser(email, name, password);
-      setUser(newUser);
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name: name,
+          },
+        },
+      });
+
+      if (error) {
+        toast({
+          title: "Registration failed",
+          description: error.message,
+          variant: "destructive",
+        });
+        return false;
+      }
+
       toast({
         title: "Account created",
-        description: `Welcome to Collectopia, ${newUser.name}!`,
+        description: `Welcome to Collectopia, ${name}!`,
       });
       return true;
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Registration failed",
-        description: "An error occurred during registration",
+        description: error.message || "An error occurred during registration",
         variant: "destructive",
       });
       return false;
     }
   };
 
-  const logout = () => {
-    logoutUser();
-    setUser(null);
+  const logout = async () => {
+    const { error } = await supabase.auth.signOut();
+    
+    if (error) {
+      toast({
+        title: "Logout failed",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+    
     toast({
       title: "Logged out",
       description: "You have been logged out successfully",
