@@ -14,13 +14,16 @@ import {
   Scan,
   FileText,
   ImageIcon,
-  Edit
+  Edit,
+  UploadCloud
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useCollection } from '@/contexts/CollectionContext';
 import { toast } from '@/components/ui/use-toast';
 import { CollectionItem } from '@/types/collection';
 import { useAuth } from '@/contexts/AuthContext';
+import CameraCapture from '@/components/camera/CameraCapture';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const ScanItem = () => {
   const navigate = useNavigate();
@@ -34,6 +37,44 @@ const ScanItem = () => {
   const [itemName, setItemName] = useState('');
   const [category, setCategory] = useState('');
   const [scanResults, setScanResults] = useState<Partial<CollectionItem> | null>(null);
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>("upload");
+  
+  // Check if camera is supported
+  const [isCameraSupported, setIsCameraSupported] = useState<boolean | null>(null);
+  
+  React.useEffect(() => {
+    // Check if camera is supported
+    const checkCameraSupport = async () => {
+      try {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          setIsCameraSupported(false);
+          return;
+        }
+        
+        // Try to get camera access to confirm support
+        await navigator.mediaDevices.getUserMedia({ video: true })
+          .then(stream => {
+            // Camera is supported and permission granted
+            setIsCameraSupported(true);
+            // Stop the camera stream immediately since we're just checking
+            stream.getTracks().forEach(track => track.stop());
+          })
+          .catch(error => {
+            // If permission denied but device has camera
+            if (error.name === "NotAllowedError" || error.name === "SecurityError") {
+              setIsCameraSupported(true);
+            } else {
+              setIsCameraSupported(false);
+            }
+          });
+      } catch (err) {
+        setIsCameraSupported(false);
+      }
+    };
+    
+    checkCameraSupport();
+  }, []);
   
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -43,6 +84,13 @@ const ScanItem = () => {
     // In a real app, we'd upload these to a server
     const newImages = Array.from(files).map(file => URL.createObjectURL(file));
     setImages(prevImages => [...prevImages, ...newImages]);
+  };
+  
+  const handleCameraCapture = (imageSrc: string) => {
+    setImages(prevImages => [...prevImages, imageSrc]);
+    setIsCameraActive(false);
+    // Auto-switch to upload tab after capture
+    setActiveTab("upload");
   };
   
   const removeImage = (index: number) => {
@@ -146,6 +194,88 @@ const ScanItem = () => {
     }).format(amount);
   };
 
+  // Render image upload and camera UI based on step
+  const renderImageInput = () => {
+    if (isCameraActive) {
+      return (
+        <CameraCapture 
+          onCapture={handleCameraCapture}
+          onClose={() => setIsCameraActive(false)}
+        />
+      );
+    }
+    
+    return (
+      <Tabs 
+        defaultValue="upload" 
+        value={activeTab} 
+        onValueChange={setActiveTab}
+        className="w-full"
+      >
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="upload">
+            <UploadCloud className="mr-2 h-4 w-4" />
+            Upload Images
+          </TabsTrigger>
+          
+          {isCameraSupported && (
+            <TabsTrigger value="camera">
+              <Camera className="mr-2 h-4 w-4" />
+              Use Camera
+            </TabsTrigger>
+          )}
+        </TabsList>
+        
+        <TabsContent value="upload" className="mt-4">
+          <div className="flex items-center justify-center w-full">
+            <label 
+              htmlFor="images"
+              className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100"
+            >
+              <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                <Upload className="w-8 h-8 mb-2 text-gray-500" />
+                <p className="mb-2 text-sm text-gray-500">
+                  <span className="font-semibold">Click to upload</span> or drag and drop
+                </p>
+                <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+              </div>
+              <Input 
+                id="images" 
+                type="file"
+                className="hidden"
+                accept="image/*"
+                multiple
+                onChange={handleImageUpload}
+              />
+            </label>
+          </div>
+        </TabsContent>
+        
+        {isCameraSupported && (
+          <TabsContent value="camera" className="mt-4">
+            <div className="flex flex-col items-center justify-center w-full space-y-4">
+              <div className="text-center space-y-2">
+                <Camera className="w-12 h-12 mx-auto text-collector-navy" />
+                <p className="text-gray-600">
+                  Take photos directly with your device camera
+                </p>
+              </div>
+              
+              <Button 
+                size="lg" 
+                className="w-full md:w-auto"
+                onClick={() => setIsCameraActive(true)}
+              >
+                <Camera className="mr-2 h-5 w-5" />
+                Open Camera
+              </Button>
+            </div>
+          </TabsContent>
+        )}
+      </Tabs>
+    );
+  };
+
   return (
     <MainLayout title="Scan Item">
       <div className="container max-w-7xl mx-auto px-4 pb-12">
@@ -197,35 +327,11 @@ const ScanItem = () => {
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Camera className="mr-2 h-5 w-5" />
-                  Upload Images for Analysis
+                  {isCameraActive ? "Camera Capture" : "Upload Images for Analysis"}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div>
-                  <Label htmlFor="images" className="block mb-2">Upload Images</Label>
-                  <div className="flex items-center justify-center w-full">
-                    <label 
-                      htmlFor="images"
-                      className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100"
-                    >
-                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                        <Upload className="w-8 h-8 mb-2 text-gray-500" />
-                        <p className="mb-2 text-sm text-gray-500">
-                          <span className="font-semibold">Click to upload</span> or drag and drop
-                        </p>
-                        <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
-                      </div>
-                      <Input 
-                        id="images" 
-                        type="file"
-                        className="hidden"
-                        accept="image/*"
-                        multiple
-                        onChange={handleImageUpload}
-                      />
-                    </label>
-                  </div>
-                </div>
+                {renderImageInput()}
                 
                 {images.length > 0 && (
                   <div>
