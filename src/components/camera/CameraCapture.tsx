@@ -1,11 +1,29 @@
 
 import React, { useRef, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Camera, SwitchCamera, Ban, ImageDown } from 'lucide-react';
+import { Camera, SwitchCamera, Ban, ImageDown, Loader2 } from 'lucide-react';
 
 interface CameraCaptureProps {
-  onCapture: (imageSrc: string) => void;
+  onCapture: (imageSrc: string, analysis?: ImageAnalysisResult) => void;
   onClose: () => void;
+}
+
+export interface ImageAnalysisResult {
+  primaryObject: {
+    shape: string;
+    colors: {
+      dominant: string;
+      accents: string[];
+    };
+    texture: string;
+    material: string;
+    distinguishingFeatures: string[];
+    timePeriod?: string;
+    possibleFunctions?: string[];
+    style?: string;
+    condition?: string;
+  };
+  additionalObservations: string;
 }
 
 const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose }) => {
@@ -15,6 +33,7 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose }) => 
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('environment');
   const [hasMultipleCameras, setHasMultipleCameras] = useState(false);
   const [permissionDenied, setPermissionDenied] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
 
   useEffect(() => {
     // Check if device has multiple cameras
@@ -68,8 +87,41 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose }) => 
     }
   };
 
-  const captureImage = () => {
+  const mockAnalyzeImage = async (imageSrc: string): Promise<ImageAnalysisResult> => {
+    // In a real app, this would call an AI service
+    // For demo purposes, we'll simulate processing time
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        // Mock analysis result
+        resolve({
+          primaryObject: {
+            shape: "Rectangular with rounded corners",
+            colors: {
+              dominant: "Silver/metallic",
+              accents: ["Black", "Gold", "White"]
+            },
+            texture: "Smooth with engraved markings",
+            material: "Metal alloy, possibly silver or nickel with bronze elements",
+            distinguishingFeatures: [
+              "Engraved serial number",
+              "Patina suggesting age",
+              "Unique hallmark on bottom edge"
+            ],
+            timePeriod: "Likely mid-20th century (1950s-1960s)",
+            possibleFunctions: ["Decorative", "Commemorative", "Functional tool"],
+            style: "Art Deco influence with modernist elements",
+            condition: "Good with minor wear consistent with age"
+          },
+          additionalObservations: "The object shows signs of careful handling over time with minimal damage. The craftsmanship suggests professional manufacturing rather than artisanal production. Several markings indicate potential historical significance."
+        });
+      }, 1500);
+    });
+  };
+
+  const captureImage = async () => {
     if (videoRef.current && canvasRef.current) {
+      setAnalyzing(true);
+      
       const video = videoRef.current;
       const canvas = canvasRef.current;
       
@@ -84,7 +136,17 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose }) => 
         
         // Convert canvas to data URL
         const imageSrc = canvas.toDataURL('image/jpeg');
-        onCapture(imageSrc);
+        
+        // Analyze the image
+        try {
+          const analysis = await mockAnalyzeImage(imageSrc);
+          onCapture(imageSrc, analysis);
+        } catch (error) {
+          console.error("Error analyzing image:", error);
+          onCapture(imageSrc); // Still send the image even if analysis fails
+        } finally {
+          setAnalyzing(false);
+        }
       }
     }
   };
@@ -140,9 +202,18 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose }) => 
             </Button>
           )}
           
-          <Button onClick={captureImage} className="bg-collector-navy">
-            <Camera className="h-5 w-5 mr-2" />
-            Capture
+          <Button onClick={captureImage} className="bg-collector-navy" disabled={analyzing}>
+            {analyzing ? (
+              <>
+                <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                Analyzing...
+              </>
+            ) : (
+              <>
+                <Camera className="h-5 w-5 mr-2" />
+                Capture
+              </>
+            )}
           </Button>
         </div>
       </div>

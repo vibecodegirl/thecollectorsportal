@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
@@ -15,14 +14,15 @@ import {
   FileText,
   ImageIcon,
   Edit,
-  UploadCloud
+  UploadCloud,
+  Info
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useCollection } from '@/contexts/CollectionContext';
 import { toast } from '@/components/ui/use-toast';
 import { CollectionItem } from '@/types/collection';
 import { useAuth } from '@/contexts/AuthContext';
-import CameraCapture from '@/components/camera/CameraCapture';
+import CameraCapture, { ImageAnalysisResult } from '@/components/camera/CameraCapture';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const ScanItem = () => {
@@ -39,6 +39,7 @@ const ScanItem = () => {
   const [scanResults, setScanResults] = useState<Partial<CollectionItem> | null>(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("upload");
+  const [imageAnalysis, setImageAnalysis] = useState<ImageAnalysisResult | null>(null);
   
   // Check if camera is supported
   const [isCameraSupported, setIsCameraSupported] = useState<boolean | null>(null);
@@ -86,9 +87,31 @@ const ScanItem = () => {
     setImages(prevImages => [...prevImages, ...newImages]);
   };
   
-  const handleCameraCapture = (imageSrc: string) => {
+  const handleCameraCapture = (imageSrc: string, analysis?: ImageAnalysisResult) => {
     setImages(prevImages => [...prevImages, imageSrc]);
     setIsCameraActive(false);
+    
+    if (analysis) {
+      setImageAnalysis(analysis);
+      
+      // Use analysis to pre-fill some fields
+      if (!itemName && analysis.primaryObject?.style) {
+        const suggestedName = `${analysis.primaryObject.style} Item`;
+        setItemName(suggestedName);
+      }
+      
+      // Set a category if one can be inferred
+      if (!category && analysis.primaryObject?.possibleFunctions?.length) {
+        const suggestedCategory = analysis.primaryObject.possibleFunctions[0];
+        setCategory(suggestedCategory);
+      }
+      
+      toast({
+        title: "Image analyzed",
+        description: "The object details have been analyzed",
+      });
+    }
+    
     // Auto-switch to upload tab after capture
     setActiveTab("upload");
   };
@@ -110,11 +133,29 @@ const ScanItem = () => {
     setScanning(true);
     
     try {
-      const scanResult = await analyzeItem({
+      // If we have image analysis, enhance the request with that data
+      const enhancedDescription = imageAnalysis ? 
+        `${imageAnalysis.primaryObject.shape} object made of ${imageAnalysis.primaryObject.material}. ` +
+        `${imageAnalysis.primaryObject.texture} texture with ${imageAnalysis.primaryObject.colors.dominant} color. ` +
+        `${imageAnalysis.additionalObservations}` : 
+        undefined;
+      
+      const scanRequest = {
         name: itemName,
         category,
-        images
-      });
+        images,
+        description: enhancedDescription
+      };
+      
+      const scanResult = await analyzeItem(scanRequest);
+      
+      // If we have image analysis, enhance the scan results
+      if (imageAnalysis) {
+        scanResult.condition = scanResult.condition || imageAnalysis.primaryObject.condition || "Good";
+        scanResult.type = scanResult.type || imageAnalysis.primaryObject.style || "Unknown";
+        scanResult.notes = scanResult.notes || imageAnalysis.additionalObservations;
+        scanResult.yearProduced = scanResult.yearProduced || imageAnalysis.primaryObject.timePeriod || "Unknown";
+      }
       
       setScanResults(scanResult);
       setActiveStep(2);
@@ -276,6 +317,84 @@ const ScanItem = () => {
     );
   };
 
+  // Render image analysis details if available
+  const renderImageAnalysisDetails = () => {
+    if (!imageAnalysis) return null;
+    
+    return (
+      <Card className="mt-6">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center">
+            <Info className="w-4 h-4 mr-1" />
+            Image Analysis Details
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="text-sm">
+          <div className="space-y-3">
+            <div>
+              <p className="font-medium">Object Shape:</p>
+              <p className="text-muted-foreground">{imageAnalysis.primaryObject.shape}</p>
+            </div>
+            
+            <div>
+              <p className="font-medium">Colors:</p>
+              <p className="text-muted-foreground">
+                Dominant: {imageAnalysis.primaryObject.colors.dominant}<br />
+                Accents: {imageAnalysis.primaryObject.colors.accents.join(", ")}
+              </p>
+            </div>
+            
+            <div>
+              <p className="font-medium">Material & Texture:</p>
+              <p className="text-muted-foreground">
+                {imageAnalysis.primaryObject.material} with {imageAnalysis.primaryObject.texture.toLowerCase()} texture
+              </p>
+            </div>
+            
+            {imageAnalysis.primaryObject.distinguishingFeatures && (
+              <div>
+                <p className="font-medium">Distinguishing Features:</p>
+                <ul className="list-disc list-inside text-muted-foreground">
+                  {imageAnalysis.primaryObject.distinguishingFeatures.map((feature, index) => (
+                    <li key={index}>{feature}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            
+            {imageAnalysis.primaryObject.timePeriod && (
+              <div>
+                <p className="font-medium">Time Period:</p>
+                <p className="text-muted-foreground">{imageAnalysis.primaryObject.timePeriod}</p>
+              </div>
+            )}
+            
+            {imageAnalysis.primaryObject.style && (
+              <div>
+                <p className="font-medium">Style:</p>
+                <p className="text-muted-foreground">{imageAnalysis.primaryObject.style}</p>
+              </div>
+            )}
+            
+            {imageAnalysis.primaryObject.condition && (
+              <div>
+                <p className="font-medium">Condition:</p>
+                <p className="text-muted-foreground">{imageAnalysis.primaryObject.condition}</p>
+              </div>
+            )}
+            
+            {imageAnalysis.additionalObservations && (
+              <div>
+                <p className="font-medium">Additional Observations:</p>
+                <p className="text-muted-foreground">{imageAnalysis.additionalObservations}</p>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
     <MainLayout title="Scan Item">
       <div className="container max-w-7xl mx-auto px-4 pb-12">
@@ -360,6 +479,8 @@ const ScanItem = () => {
                     </div>
                   </div>
                 )}
+                
+                {renderImageAnalysisDetails()}
               </CardContent>
             </Card>
             

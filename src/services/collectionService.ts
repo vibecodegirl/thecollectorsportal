@@ -68,22 +68,27 @@ export const deleteCollectionItem = async (itemId: string): Promise<boolean> => 
 export const analyzeCollectionItem = async (
   request: AIAnalysisRequest
 ): Promise<Partial<CollectionItem>> => {
-  // This is a mock implementation that would be replaced with a real AI service
+  // In a real app, this would call an AI service
+  // For demo purposes, we'll return mock data that simulates AI analysis
+  
+  // Enhance the mock data with any description passed in the request
+  const description = request.description || "";
+  
   return {
     category: request.category || "Unknown",
     name: request.name || "Analyzed Item",
-    type: "Unknown",
-    manufacturer: "Unknown",
-    yearProduced: "Unknown",
-    edition: "Standard",
-    modelNumber: "Unknown",
-    uniqueIdentifiers: "",
-    condition: "Good",
-    flaws: "",
+    type: description.includes("Art Deco") ? "Art Deco Object" : "Unknown",
+    manufacturer: description.includes("professional manufacturing") ? "Professional Manufacturer" : "Unknown",
+    yearProduced: description.includes("mid-20th century") ? "1950s-1960s" : "Unknown",
+    edition: description.includes("commemorative") ? "Commemorative Edition" : "Standard",
+    modelNumber: description.includes("serial number") ? "SN-" + Math.floor(1000 + Math.random() * 9000) : "Unknown",
+    uniqueIdentifiers: description.includes("hallmark") ? "Has unique hallmark" : "",
+    condition: description.includes("Good") ? "Good" : description.includes("Excellent") ? "Excellent" : "Fair",
+    flaws: description.includes("minor wear") ? "Minor wear consistent with age" : "",
     completeness: "Complete",
-    dimensions: "",
+    dimensions: description.includes("rectangular") ? "Approximately 10cm x 15cm" : "",
     weight: "",
-    rarity: "Common",
+    rarity: description.includes("unique") ? "Rare" : "Common",
     priceEstimate: {
       low: 10,
       average: 20,
@@ -91,9 +96,9 @@ export const analyzeCollectionItem = async (
       marketValue: 20
     },
     confidenceScore: {
-      score: 50,
-      level: 'medium' as 'low' | 'medium' | 'high'
+      score: description.length > 100 ? 75 : 50,
+      level: description.length > 100 ? 'high' as 'low' | 'medium' | 'high' : 'medium' as 'low' | 'medium' | 'high'
     },
-    notes: request.description || "",
+    notes: description || request.description || "",
   };
 };
