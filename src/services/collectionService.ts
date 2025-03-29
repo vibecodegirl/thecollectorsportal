@@ -68,9 +68,34 @@ export const deleteCollectionItem = async (itemId: string): Promise<boolean> => 
 export const analyzeCollectionItem = async (
   request: AIAnalysisRequest
 ): Promise<Partial<CollectionItem>> => {
-  // In a real app, this would call an AI service
-  // For demo purposes, we'll return mock data that simulates AI analysis
-  
+  try {
+    // Fetch the analysis from Supabase Edge Function that has access to the API keys
+    const { data, error } = await supabase.functions.invoke('analyze-item', {
+      body: { 
+        images: request.images,
+        category: request.category,
+        description: request.description,
+        name: request.name
+      }
+    });
+    
+    if (error) throw error;
+    
+    // If the Edge Function is not yet implemented, use the mock data
+    if (!data) {
+      return generateMockAnalysis(request);
+    }
+    
+    return data;
+  } catch (error) {
+    console.error("Error analyzing item:", error);
+    // Fallback to mock data if the Edge Function call fails
+    return generateMockAnalysis(request);
+  }
+};
+
+// Helper function to generate mock analysis data for demo purposes
+const generateMockAnalysis = (request: AIAnalysisRequest): Partial<CollectionItem> => {
   // Enhance the mock data with any description passed in the request
   const description = request.description || "";
   
@@ -100,5 +125,23 @@ export const analyzeCollectionItem = async (
       level: description.length > 100 ? 'high' as 'low' | 'medium' | 'high' : 'medium' as 'low' | 'medium' | 'high'
     },
     notes: description || request.description || "",
+    primaryObject: {
+      shape: description.includes("round") ? "Round/Circular" : description.includes("square") ? "Square/Rectangular" : "Irregular",
+      colors: {
+        dominant: description.includes("blue") ? "Blue" : description.includes("red") ? "Red" : "Neutral",
+        accents: description.includes("gold") ? "Gold accents" : description.includes("silver") ? "Silver accents" : "No distinct accents"
+      },
+      texture: description.includes("smooth") ? "Smooth" : description.includes("rough") ? "Rough/Textured" : "Mixed texture",
+      material: description.includes("wood") ? "Wood" : description.includes("metal") ? "Metal" : description.includes("ceramic") ? "Ceramic" : "Unknown material",
+      distinguishingFeatures: description.includes("signature") ? "Contains signature or maker's mark" : 
+                             description.includes("pattern") ? "Distinctive pattern or design" : "No significant distinguishing features noted",
+      style: description.includes("modern") ? "Modern/Contemporary" : 
+             description.includes("antique") ? "Antique/Vintage" : 
+             description.includes("Art Deco") ? "Art Deco" : "Indeterminate style",
+      timePeriod: description.includes("20th century") ? "20th Century" : 
+                  description.includes("19th century") ? "19th Century" : "Unknown period",
+      function: description.includes("decorative") ? "Decorative" : 
+                description.includes("functional") ? "Functional/Utilitarian" : "Unknown function"
+    }
   };
 };
