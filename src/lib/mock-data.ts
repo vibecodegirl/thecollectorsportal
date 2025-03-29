@@ -58,6 +58,21 @@ const mockCollections: CollectionItem[] = [
       level: "high"
     },
     
+    primaryObject: {
+      shape: "Round/Circular",
+      colors: {
+        dominant: "Copper/Bronze",
+        accents: "Brown toning"
+      },
+      texture: "Smooth with fine details",
+      material: "Copper",
+      distinguishingFeatures: ["VDB initials on reverse", "S mintmark"],
+      style: "US Coin",
+      timePeriod: "Early 20th Century",
+      function: "Currency",
+      condition: "Very Fine",
+    },
+    
     notes: "One of the key dates in the Lincoln cent series. The 1909-S VDB is highly sought after due to its low mintage and the controversy surrounding the designer's initials."
   },
   {
@@ -102,6 +117,21 @@ const mockCollections: CollectionItem[] = [
     confidenceScore: {
       score: 92,
       level: "high"
+    },
+    
+    primaryObject: {
+      shape: "Rectangular",
+      colors: {
+        dominant: "Orange/Red",
+        accents: ["Blue", "Yellow", "Holographic shine"]
+      },
+      texture: "Glossy with holographic pattern",
+      material: "Cardstock with foil treatment",
+      distinguishingFeatures: ["Holographic artwork", "1st Edition stamp", "Charizard artwork"],
+      style: "Trading Card Game",
+      timePeriod: "Late 1990s",
+      function: "Collectible Game Piece",
+      condition: "Near Mint",
     },
     
     notes: "One of the most iconic Pokémon cards ever created. The Charizard from the original Base Set remains highly sought after by collectors worldwide."
@@ -150,6 +180,21 @@ const mockCollections: CollectionItem[] = [
       level: "medium"
     },
     
+    primaryObject: {
+      shape: "Humanoid/Standing figure",
+      colors: {
+        dominant: "Black",
+        accents: ["Silver", "Red"]
+      },
+      texture: "Plastic with cloth cape",
+      material: "Injection-molded plastic and fabric",
+      distinguishingFeatures: ["Telescoping lightsaber", "Black helmet", "Cape"],
+      style: "Vintage Action Figure",
+      timePeriod: "Late 1970s",
+      function: "Toy/Collectible",
+      condition: "Good with wear",
+    },
+    
     notes: "The telescoping lightsaber variant is among the most sought-after early Star Wars figures. Due to design flaws, the telescoping feature was quickly discontinued, making these early figures quite valuable."
   },
   {
@@ -194,6 +239,21 @@ const mockCollections: CollectionItem[] = [
     confidenceScore: {
       score: 40,
       level: "low"
+    },
+    
+    primaryObject: {
+      shape: "Rectangular with perforated edges",
+      colors: {
+        dominant: "Blue",
+        accents: ["Red", "White"]
+      },
+      texture: "Paper with adhesive backing",
+      material: "Engraved paper",
+      distinguishingFeatures: ["Inverted airplane image", "Perforation pattern", "24¢ denomination"],
+      style: "Postage Stamp",
+      timePeriod: "Early 20th Century",
+      function: "Postal/Collectible",
+      condition: "Very Fine",
     },
     
     notes: "One of the world's most famous stamp errors. During printing, the Curtiss JN-4 airplane in the center was accidentally printed upside-down. Only one sheet of 100 stamps with this error was ever discovered."

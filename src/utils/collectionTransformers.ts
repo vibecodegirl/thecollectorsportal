@@ -1,5 +1,5 @@
 
-import { CollectionItem } from '@/types/collection';
+import { CollectionItem, PrimaryObject } from '@/types/collection';
 import { Tables } from '@/integrations/supabase/types';
 
 /**
@@ -41,6 +41,19 @@ export const transformDatabaseItemToCollectionItem = (
     confidenceScore: {
       score: 50,
       level: 'medium' as 'low' | 'medium' | 'high'
+    },
+    primaryObject: {
+      shape: 'Unknown',
+      colors: {
+        dominant: 'Unknown',
+        accents: []
+      },
+      texture: 'Unknown',
+      material: 'Unknown',
+      distinguishingFeatures: [],
+      style: 'Unknown',
+      timePeriod: 'Unknown',
+      function: 'Unknown'
     },
     notes: item.description || ''
   };
