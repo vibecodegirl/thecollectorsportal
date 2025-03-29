@@ -13,7 +13,8 @@ import {
   ArrowLeft,
   Scan,
   FileText,
-  ImageIcon
+  ImageIcon,
+  Edit
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useCollection } from '@/contexts/CollectionContext';
