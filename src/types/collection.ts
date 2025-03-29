@@ -11,6 +11,22 @@ export type ConfidenceScore = {
   level: 'low' | 'medium' | 'high';
 };
 
+export type PrimaryObject = {
+  shape: string;
+  colors: {
+    dominant: string;
+    accents: string | string[];
+  };
+  texture: string;
+  material: string;
+  distinguishingFeatures: string | string[];
+  style: string;
+  timePeriod: string;
+  function: string;
+  condition?: string;
+  possibleFunctions?: string[];
+};
+
 export type CollectionItem = {
   id: string;
   userId: string;
@@ -51,6 +67,9 @@ export type CollectionItem = {
   rarity: string;
   priceEstimate: PriceEstimate;
   confidenceScore: ConfidenceScore;
+  
+  // AI Analysis Data
+  primaryObject: PrimaryObject;
   
   // Notes
   notes: string;
