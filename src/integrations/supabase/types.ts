@@ -12,42 +12,84 @@ export type Database = {
       collection_items: {
         Row: {
           acquisition_date: string | null
+          acquisition_source: string | null
           category: string | null
+          completeness: string | null
           condition: string | null
           created_at: string
           description: string | null
+          dimensions: string | null
+          documentation: string | null
+          edition: string | null
           estimated_value: number | null
+          flaws: string | null
           id: string
           image_url: string | null
+          manufacturer: string | null
+          model_number: string | null
           name: string
+          previous_owners: string | null
+          rarity: string | null
+          type: string | null
+          unique_identifiers: string | null
           updated_at: string
           user_id: string
+          weight: string | null
+          year_produced: string | null
         }
         Insert: {
           acquisition_date?: string | null
+          acquisition_source?: string | null
           category?: string | null
+          completeness?: string | null
           condition?: string | null
           created_at?: string
           description?: string | null
+          dimensions?: string | null
+          documentation?: string | null
+          edition?: string | null
           estimated_value?: number | null
+          flaws?: string | null
           id?: string
           image_url?: string | null
+          manufacturer?: string | null
+          model_number?: string | null
           name: string
+          previous_owners?: string | null
+          rarity?: string | null
+          type?: string | null
+          unique_identifiers?: string | null
           updated_at?: string
           user_id: string
+          weight?: string | null
+          year_produced?: string | null
         }
         Update: {
           acquisition_date?: string | null
+          acquisition_source?: string | null
           category?: string | null
+          completeness?: string | null
           condition?: string | null
           created_at?: string
           description?: string | null
+          dimensions?: string | null
+          documentation?: string | null
+          edition?: string | null
           estimated_value?: number | null
+          flaws?: string | null
           id?: string
           image_url?: string | null
+          manufacturer?: string | null
+          model_number?: string | null
           name?: string
+          previous_owners?: string | null
+          rarity?: string | null
+          type?: string | null
+          unique_identifiers?: string | null
           updated_at?: string
           user_id?: string
+          weight?: string | null
+          year_produced?: string | null
         }
         Relationships: []
       }

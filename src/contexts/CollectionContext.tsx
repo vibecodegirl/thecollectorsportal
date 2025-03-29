@@ -23,6 +23,7 @@ export interface AIAnalysisRequest {
   images?: string[];
   category?: string;
   description?: string;
+  name?: string;
 }
 
 const CollectionContext = createContext<CollectionContextType | undefined>(undefined);
@@ -336,7 +337,7 @@ export const CollectionProvider = ({ children }: { children: ReactNode }) => {
       
       return {
         category: request.category || "Unknown",
-        name: "Analyzed Item",
+        name: request.name || "Analyzed Item",
         type: "Unknown",
         manufacturer: "Unknown",
         yearProduced: "Unknown",
@@ -357,7 +358,7 @@ export const CollectionProvider = ({ children }: { children: ReactNode }) => {
         },
         confidenceScore: {
           score: 50,
-          level: 'medium'
+          level: 'medium' as 'low' | 'medium' | 'high'
         },
         notes: request.description || "",
       };
