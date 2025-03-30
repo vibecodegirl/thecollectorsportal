@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { PriceEstimate } from '@/types/collection';
 import { Button } from '@/components/ui/button';
-import { Search, Loader2, ExternalLink } from 'lucide-react';
+import { Search, Loader2, ExternalLink, AlertCircle } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { searchItemPrices } from '@/services/collection/priceService';
 import {
@@ -15,12 +15,14 @@ import {
   SheetFooter,
 } from "@/components/ui/sheet";
 import { Badge } from '@/components/ui/badge';
+import ConfidenceBadge from './ConfidenceBadge';
 
 interface PriceEstimateDisplayProps {
   priceEstimate: PriceEstimate;
   showDetails?: boolean;
   itemName?: string;
   itemCategory?: string;
+  confidenceScore?: { score: number; level: 'low' | 'medium' | 'high' };
 }
 
 const formatCurrency = (amount: number) => {
@@ -36,12 +38,19 @@ const PriceEstimateDisplay: React.FC<PriceEstimateDisplayProps> = ({
   priceEstimate, 
   showDetails = false,
   itemName = '',
-  itemCategory = ''
+  itemCategory = '',
+  confidenceScore
 }) => {
   const [searchResults, setSearchResults] = useState<Array<{ title: string; link: string; price?: string }>>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [priceRanges, setPriceRanges] = useState<{ low: number | null; average: number | null; high: number | null; count: number } | null>(null);
+  const [priceRanges, setPriceRanges] = useState<{ 
+    low: number | null; 
+    average: number | null; 
+    high: number | null; 
+    count: number;
+    confidenceScore?: { score: number; level: 'low' | 'medium' | 'high' };
+  } | null>(null);
   const { toast } = useToast();
 
   const handlePriceSearch = async () => {
@@ -104,6 +113,12 @@ const PriceEstimateDisplay: React.FC<PriceEstimateDisplayProps> = ({
           est. value
         </span>
         
+        {confidenceScore && (
+          <span className="ml-2">
+            <ConfidenceBadge confidenceScore={confidenceScore} />
+          </span>
+        )}
+        
         {itemName && (
           <Sheet open={isSheetOpen} onOpenChange={onSheetOpenChange}>
             <SheetTrigger asChild>
@@ -141,10 +156,14 @@ const PriceEstimateDisplay: React.FC<PriceEstimateDisplayProps> = ({
                       <p className="font-medium">{priceRanges.high !== null ? formatCurrency(priceRanges.high) : 'N/A'}</p>
                     </div>
                   </div>
-                  <div className="mt-2 text-center">
+                  <div className="mt-2 flex justify-between items-center">
                     <Badge variant="outline" className="text-xs">
                       Based on {priceRanges.count} price points
                     </Badge>
+                    
+                    {priceRanges.confidenceScore && (
+                      <ConfidenceBadge confidenceScore={priceRanges.confidenceScore} />
+                    )}
                   </div>
                 </div>
               )}
@@ -193,6 +212,16 @@ const PriceEstimateDisplay: React.FC<PriceEstimateDisplayProps> = ({
                   </div>
                 )}
               </div>
+              
+              {priceRanges && priceRanges.confidenceScore?.level === 'low' && (
+                <div className="mb-4 p-3 border border-yellow-200 bg-yellow-50 rounded-md flex items-start">
+                  <AlertCircle className="h-5 w-5 text-yellow-500 mr-2 flex-shrink-0 mt-0.5" />
+                  <div className="text-sm text-yellow-700">
+                    <p className="font-medium">Low confidence estimate</p>
+                    <p>This price estimate may not be accurate due to limited data or inconsistent prices found online. Consider researching further.</p>
+                  </div>
+                </div>
+              )}
               
               <SheetFooter className="mt-4">
                 <Button 

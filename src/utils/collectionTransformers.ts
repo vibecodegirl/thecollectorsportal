@@ -1,5 +1,5 @@
 
-import { CollectionItem, PrimaryObject } from '@/types/collection';
+import { CollectionItem, PrimaryObject, ConfidenceScore } from '@/types/collection';
 import { Tables } from '@/integrations/supabase/types';
 
 /**
@@ -34,15 +34,12 @@ export const transformDatabaseItemToCollectionItem = (
     weight: item.weight || '',
     rarity: item.rarity || '',
     priceEstimate: {
-      low: item.estimated_value || 0,
+      low: item.estimated_value ? item.estimated_value * 0.8 : 0,
       average: item.estimated_value || 0,
-      high: item.estimated_value || 0,
+      high: item.estimated_value ? item.estimated_value * 1.2 : 0,
       marketValue: item.estimated_value || 0
     },
-    confidenceScore: {
-      score: 50,
-      level: 'medium' as 'low' | 'medium' | 'high'
-    },
+    confidenceScore: calculateConfidenceScore(item),
     primaryObject: {
       shape: 'Unknown',
       colors: {
@@ -61,18 +58,48 @@ export const transformDatabaseItemToCollectionItem = (
 };
 
 /**
+ * Calculates a confidence score based on the available item data
+ */
+const calculateConfidenceScore = (item: Tables<'collection_items'>): ConfidenceScore => {
+  let score = 50; // Base score
+  
+  // Add points for having more detailed information
+  if (item.name && item.name.length > 3) score += 5;
+  if (item.category) score += 5;
+  if (item.manufacturer) score += 5;
+  if (item.year_produced) score += 5;
+  if (item.condition) score += 5;
+  if (item.estimated_value && item.estimated_value > 0) score += 10;
+  if (item.image_url) score += 5;
+  
+  // Cap score at 100
+  score = Math.min(score, 100);
+  
+  // Determine level based on score
+  let level: 'low' | 'medium' | 'high';
+  if (score < 40) level = 'low';
+  else if (score < 70) level = 'medium';
+  else level = 'high';
+  
+  return { score, level };
+};
+
+/**
  * Transforms a CollectionItem into a database item for storage
  * @param item The collection item to transform
  * @param userId Optional user ID to include (useful when creating new items)
  */
 export const transformCollectionItemToDatabase = (item: Partial<CollectionItem>, userId?: string) => {
+  // Calculate the estimated value as the market value from price estimates if available
+  const estimatedValue = item.priceEstimate?.marketValue || 0;
+  
   return {
     user_id: userId || item.userId,
     name: item.name || '',
     description: item.notes,
     category: item.category,
     condition: item.condition,
-    estimated_value: item.priceEstimate?.marketValue || 0,
+    estimated_value: estimatedValue,
     image_url: item.images && item.images.length > 0 ? item.images[0] : null,
     acquisition_date: null,
     type: item.type,

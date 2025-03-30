@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { ConfidenceScore } from '@/types/collection';
 
 interface PriceRange {
   low: number | null;
@@ -7,6 +8,9 @@ interface PriceRange {
   high: number | null;
   count: number;
   all?: number[];
+  sources?: string[];
+  condition?: string;
+  confidenceScore?: ConfidenceScore;
 }
 
 interface SearchResult {
@@ -51,6 +55,11 @@ export const searchItemPrices = async (query: string): Promise<SearchResult> => 
         })).filter((item: any) => item.price)
       : [];
     
+    // If we have price ranges, calculate confidence score
+    if (data.priceRanges) {
+      data.priceRanges.confidenceScore = calculatePriceConfidence(data.priceRanges, data.marketplace);
+    }
+    
     return {
       items,
       priceRanges: data.priceRanges,
@@ -62,7 +71,75 @@ export const searchItemPrices = async (query: string): Promise<SearchResult> => 
   }
 };
 
-// New function to enrich a search query with specific terms for better price results
+/**
+ * Calculate a confidence score for the price estimate based on available data
+ */
+const calculatePriceConfidence = (
+  priceRanges: PriceRange, 
+  marketplace?: { name: string; url: string; count: number }[]
+): ConfidenceScore => {
+  let score = 30; // Base score - start low
+  
+  // Add points based on number of price points found
+  if (priceRanges.count > 0) {
+    // More price points = higher confidence, up to 30 additional points
+    score += Math.min(priceRanges.count * 3, 30);
+    
+    // Check price consistency (lower standard deviation = higher confidence)
+    if (priceRanges.all && priceRanges.all.length > 1) {
+      const std = calculateStandardDeviation(priceRanges.all);
+      const mean = priceRanges.average || 0;
+      
+      // If prices are consistent (CV < 0.3), add up to 20 points
+      if (mean > 0) {
+        const cv = std / mean; // Coefficient of variation
+        if (cv < 0.1) score += 20;
+        else if (cv < 0.2) score += 15;
+        else if (cv < 0.3) score += 10;
+        else if (cv < 0.5) score += 5;
+      }
+    }
+  }
+  
+  // Add points for marketplace diversity (more marketplaces = higher confidence)
+  if (marketplace && marketplace.length > 0) {
+    score += Math.min(marketplace.length * 5, 20);
+    
+    // Give bonus points for reputable marketplaces
+    const reputableSites = ['ebay.com', 'amazon.com', 'sothebys.com', 'christies.com', 'heritage.com'];
+    const hasReputableSite = marketplace.some(m => 
+      reputableSites.some(site => m.url.includes(site))
+    );
+    
+    if (hasReputableSite) score += 10;
+  }
+  
+  // Cap score at 100
+  score = Math.min(Math.max(score, 10), 100);
+  
+  // Determine level based on score
+  let level: 'low' | 'medium' | 'high';
+  if (score < 40) level = 'low';
+  else if (score < 70) level = 'medium';
+  else level = 'high';
+  
+  return { score, level };
+};
+
+/**
+ * Calculate standard deviation for an array of numbers
+ */
+const calculateStandardDeviation = (values: number[]): number => {
+  const avg = values.reduce((sum, val) => sum + val, 0) / values.length;
+  const squareDiffs = values.map(value => {
+    const diff = value - avg;
+    return diff * diff;
+  });
+  const avgSquareDiff = squareDiffs.reduce((sum, val) => sum + val, 0) / squareDiffs.length;
+  return Math.sqrt(avgSquareDiff);
+};
+
+// Function to enrich a search query with specific terms for better price results
 const enhanceSearchQuery = (query: string): string => {
   const baseQuery = query.trim();
   
@@ -106,7 +183,9 @@ const extractPriceFromSnippet = (snippet?: string): string | undefined => {
   return priceMatch ? priceMatch[0].trim() : undefined;
 };
 
-// New function to get estimated price ranges for an item using its details
+/**
+ * Get estimated price ranges for an item using its details
+ */
 export const getItemPriceEstimate = async (item: {
   name?: string;
   category?: string;
@@ -148,5 +227,65 @@ export const getItemPriceEstimate = async (item: {
   } catch (error) {
     console.error("Error estimating item price:", error);
     return null;
+  }
+};
+
+/**
+ * Search for items by image using the search-prices edge function
+ */
+export const searchByImage = async (
+  imageUrl: string, 
+  additionalTerms?: string
+): Promise<SearchResult> => {
+  try {
+    console.log("Searching by image:", imageUrl);
+    
+    // First analyze the image with Vision API to get description
+    const visionAnalysis = await analyzeImageForSearch(imageUrl);
+    
+    if (!visionAnalysis || !visionAnalysis.description) {
+      console.error("No vision analysis results");
+      return { items: [] };
+    }
+    
+    // Build search query from vision analysis
+    let searchQuery = visionAnalysis.description;
+    
+    // Add additional terms if provided
+    if (additionalTerms) {
+      searchQuery += " " + additionalTerms;
+    }
+    
+    // Search using the generated query
+    const searchResults = await searchItemPrices(searchQuery);
+    
+    // Enhance results with the vision analysis
+    return {
+      ...searchResults,
+      visionAnalysis,
+    };
+  } catch (error) {
+    console.error("Error in image search:", error);
+    return { items: [] };
+  }
+};
+
+/**
+ * Analyze an image to extract searchable text and objects
+ */
+const analyzeImageForSearch = async (imageUrl: string) => {
+  try {
+    const response = await supabase.functions.invoke('analyze-with-vision', {
+      body: { 
+        images: [imageUrl],
+        mode: 'search'
+      }
+    });
+    
+    if (response.error) throw response.error;
+    return response.data;
+  } catch (error) {
+    console.error("Vision API analysis error:", error);
+    throw error;
   }
 };
