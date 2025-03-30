@@ -8,6 +8,26 @@ import { Tables } from '@/integrations/supabase/types';
 export const transformDatabaseItemToCollectionItem = (
   item: Tables<'collection_items'>
 ): CollectionItem => {
+  // Safely parse confidence score from database
+  let confidenceScore: ConfidenceScore;
+  
+  if (item.confidence_score) {
+    // Check if confidence_score has the expected structure
+    const cs = item.confidence_score as any;
+    if (typeof cs === 'object' && 'score' in cs && 'level' in cs) {
+      confidenceScore = {
+        score: Number(cs.score),
+        level: cs.level as 'low' | 'medium' | 'high'
+      };
+    } else {
+      // Fallback to calculating if format is incorrect
+      confidenceScore = calculateConfidenceScore(item);
+    }
+  } else {
+    // Calculate if not present
+    confidenceScore = calculateConfidenceScore(item);
+  }
+  
   return {
     id: item.id,
     userId: item.user_id,
@@ -39,7 +59,7 @@ export const transformDatabaseItemToCollectionItem = (
       high: item.estimated_value ? item.estimated_value * 1.2 : 0,
       marketValue: item.estimated_value || 0
     },
-    confidenceScore: item.confidence_score ? item.confidence_score as ConfidenceScore : calculateConfidenceScore(item),
+    confidenceScore: confidenceScore,
     primaryObject: {
       shape: 'Unknown',
       colors: {
@@ -107,6 +127,12 @@ export const transformCollectionItemToDatabase = (item: Partial<CollectionItem>,
     ...rest
   } = item as any;
   
+  // Ensure confidenceScore is properly formatted for database storage
+  const confidenceScore = item.confidenceScore ? {
+    score: item.confidenceScore.score,
+    level: item.confidenceScore.level
+  } : null;
+  
   // Construct the database object with the correct field mappings
   return {
     user_id: userId || rest.userId,
@@ -131,6 +157,6 @@ export const transformCollectionItemToDatabase = (item: Partial<CollectionItem>,
     dimensions: rest.dimensions,
     weight: rest.weight,
     rarity: rest.rarity,
-    confidence_score: rest.confidenceScore // Now we can store the confidence score
+    confidence_score: confidenceScore // Store as a properly formatted object
   };
 };
