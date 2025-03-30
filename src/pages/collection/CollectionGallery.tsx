@@ -13,22 +13,27 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Link } from 'react-router-dom';
-import { Camera, Filter, Plus, Search, SortAsc, SortDesc } from 'lucide-react';
+import { Camera, Filter, Plus, Search, SortAsc, SortDesc, Archive } from 'lucide-react';
+import { ItemStatus } from '@/types/collection';
 
 const CollectionGallery = () => {
-  const { collections, loading } = useCollection();
+  const { collections, loading, filteredCollections } = useCollection();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
+  const [filterStatus, setFilterStatus] = useState<ItemStatus | 'all'>('active');
   const [sortBy, setSortBy] = useState('dateAdded');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [filteredCollections, setFilteredCollections] = useState(collections);
+  const [filteredItems, setFilteredItems] = useState(collections);
   
   // Get unique categories and ensure none are empty strings
   const uniqueCategories = [...new Set(collections.map(item => item.category || 'Uncategorized'))];
   const categories = ['all', ...uniqueCategories.filter(category => category !== '')];
   
   useEffect(() => {
-    let result = [...collections];
+    // Get base collection filtered by status
+    let result = filterStatus === 'all' 
+      ? collections 
+      : collections.filter(item => item.status === filterStatus);
     
     // Apply search
     if (searchTerm) {
@@ -67,11 +72,21 @@ const CollectionGallery = () => {
       return sortOrder === 'asc' ? comparison : -comparison;
     });
     
-    setFilteredCollections(result);
-  }, [collections, searchTerm, filterCategory, sortBy, sortOrder]);
+    setFilteredItems(result);
+  }, [collections, searchTerm, filterCategory, sortBy, sortOrder, filterStatus]);
   
   const toggleSortOrder = () => {
     setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+  };
+
+  const getStatusName = (status: ItemStatus | 'all') => {
+    switch (status) {
+      case 'active': return 'Active Items';
+      case 'archived': return 'Archived Items';
+      case 'sold': return 'Sold Items';
+      case 'all': return 'All Items';
+      default: return status;
+    }
   };
 
   return (
@@ -107,6 +122,21 @@ const CollectionGallery = () => {
           </div>
           
           <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex items-center gap-2">
+              <Archive className="text-gray-400 h-4 w-4" />
+              <Select value={filterStatus} onValueChange={(value) => setFilterStatus(value as ItemStatus | 'all')}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Items</SelectItem>
+                  <SelectItem value="active">Active Items</SelectItem>
+                  <SelectItem value="archived">Archived Items</SelectItem>
+                  <SelectItem value="sold">Sold Items</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="flex items-center gap-2 flex-grow">
               <Filter className="text-gray-400 h-4 w-4" />
               <Select value={filterCategory} onValueChange={setFilterCategory}>
@@ -151,15 +181,18 @@ const CollectionGallery = () => {
               <div key={i} className="h-80 bg-gray-200 animate-pulse rounded-lg"></div>
             ))}
           </div>
-        ) : filteredCollections.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {filteredCollections.map(item => (
-              <CollectionItemCard key={item.id} item={item} />
-            ))}
-          </div>
+        ) : filteredItems.length > 0 ? (
+          <>
+            <h2 className="text-xl font-semibold mb-4">{getStatusName(filterStatus)}</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {filteredItems.map(item => (
+                <CollectionItemCard key={item.id} item={item} />
+              ))}
+            </div>
+          </>
         ) : (
           <div className="text-center py-12 bg-gray-50 rounded-lg">
-            {searchTerm || filterCategory !== 'all' ? (
+            {searchTerm || filterCategory !== 'all' || filterStatus !== 'active' ? (
               <>
                 <h3 className="text-xl font-semibold mb-2">No matching items found</h3>
                 <p className="text-gray-500 mb-6">
@@ -168,6 +201,7 @@ const CollectionGallery = () => {
                 <Button variant="outline" onClick={() => {
                   setSearchTerm('');
                   setFilterCategory('all');
+                  setFilterStatus('active');
                 }}>
                   Clear Filters
                 </Button>
