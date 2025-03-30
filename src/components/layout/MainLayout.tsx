@@ -3,7 +3,7 @@ import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { useNavigate, Link } from 'react-router-dom';
-import { Camera, LogOut, Home, Plus, User, BookOpen, Sparkles } from 'lucide-react';
+import { Camera, LogOut, Home, Plus, User, BookOpen, Sparkles, Archive, Package } from 'lucide-react';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -33,11 +33,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({
           <div className="container max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
             <Link to="/" className="flex items-center space-x-2">
               <div className="relative">
-                <div className="absolute inset-0 bg-collector-gold blur-sm rounded-full animate-pulse-glow"></div>
-                <BookOpen className="h-8 w-8 text-collector-gold relative z-10" />
+                <Package className="h-8 w-8 text-collector-cyan relative z-10" />
               </div>
               <span className="text-2xl font-bold time-warp-text">
-                Collectopia
+                The Collectors Portal
               </span>
             </Link>
             
@@ -114,14 +113,14 @@ const MainLayout: React.FC<MainLayoutProps> = ({
             <div className="flex flex-col md:flex-row justify-between items-center">
               <div className="mb-4 md:mb-0">
                 <Link to="/" className="flex items-center space-x-2">
-                  <BookOpen className="h-6 w-6 text-collector-gold" />
+                  <Package className="h-6 w-6 text-collector-cyan" />
                   <span className="text-xl font-bold time-warp-text">
-                    Collectopia
+                    The Collectors Portal
                   </span>
                 </Link>
               </div>
               <div className="text-sm text-gray-400">
-                &copy; {new Date().getFullYear()} Collectopia. All rights reserved.
+                &copy; {new Date().getFullYear()} The Collectors Portal. All rights reserved.
               </div>
             </div>
           </div>

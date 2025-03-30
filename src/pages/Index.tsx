@@ -1,9 +1,10 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/contexts/AuthContext';
-import { ArrowRight, BookOpen, Camera, Check, Shield, Clock, Sparkles, Database, Award, GalleryThumbnails, Star, Gem, Trophy } from 'lucide-react';
+import { ArrowRight, Package, Camera, Check, Shield, Clock, Database, Award, GalleryThumbnails, Star, Gem, Trophy } from 'lucide-react';
 
 const Index = () => {
   const { user } = useAuth();
@@ -13,39 +14,19 @@ const Index = () => {
       {/* Hero Section with Time Warp Effect */}
       <section className="py-16 md:py-24 gradient-background overflow-hidden relative">
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-transparent z-0"></div>
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -inset-[10px] opacity-50">
-            {[...Array(20)].map((_, i) => (
-              <div 
-                key={i}
-                className="absolute rounded-full bg-white" 
-                style={{
-                  top: `${Math.random() * 100}%`,
-                  left: `${Math.random() * 100}%`,
-                  width: `${Math.random() * 4 + 1}px`,
-                  height: `${Math.random() * 4 + 1}px`,
-                  opacity: Math.random() * 0.5 + 0.3,
-                  animationDuration: `${Math.random() * 50 + 10}s`,
-                  animationDelay: `${Math.random() * 2}s`
-                }}
-              />
-            ))}
-          </div>
-        </div>
-
         <div className="container max-w-7xl mx-auto px-4 relative z-10">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="space-y-6">
               <h1 className="text-4xl md:text-6xl font-bold leading-tight text-white">
-                <span className="time-warp-text">Travel Through Time</span> with Your Collection
+                <span className="time-warp-text">Catalog Your Treasures</span> with The Collectors Portal
               </h1>
               <p className="text-lg md:text-xl text-gray-100">
-                Collectopia helps hobbyists catalog, organize, and value their collectibles with AI-powered insights from any era.
+                The Collectors Portal helps hobbyists catalog, organize, and value their collectibles with AI-powered insights from any era.
               </p>
               <div className="flex flex-wrap gap-4">
                 {user ? (
                   <Link to="/dashboard">
-                    <Button size="lg" className="bg-collector-gold hover:bg-amber-500 text-black animate-pulse-glow">
+                    <Button size="lg" className="bg-collector-cyan hover:bg-blue-500 text-black">
                       Go to Dashboard
                       <ArrowRight className="ml-2 h-5 w-5" />
                     </Button>
@@ -53,7 +34,7 @@ const Index = () => {
                 ) : (
                   <>
                     <Link to="/register">
-                      <Button size="lg" className="bg-collector-gold hover:bg-amber-500 text-black animate-pulse-glow">
+                      <Button size="lg" className="bg-collector-cyan hover:bg-blue-500 text-black">
                         Create Free Account
                         <ArrowRight className="ml-2 h-5 w-5" />
                       </Button>
@@ -69,15 +50,12 @@ const Index = () => {
             </div>
             <div className="hidden md:block">
               <div className="relative">
-                <div className="absolute -top-4 -left-4 w-full h-full rounded-full bg-collector-gold opacity-70 blur-md animate-pulse"></div>
-                <div className="relative z-10 bg-collector-navy/80 backdrop-blur-md rounded-full p-8 border-4 border-collector-gold shadow-2xl animate-float flex items-center justify-center">
+                <div className="relative z-10 bg-collector-navy/80 backdrop-blur-md rounded-lg p-8 border-2 border-collector-cyan shadow-xl flex items-center justify-center">
                   <div className="relative w-48 h-48 flex items-center justify-center">
-                    <div className="absolute inset-0 rounded-full bg-collector-cyan/20 animate-pulse-subtle"></div>
-                    <Trophy className="w-24 h-24 text-collector-gold animate-pulse-glow absolute" style={{ top: '10%', left: '10%' }} />
+                    <Package className="w-28 h-28 text-collector-cyan absolute" style={{ top: '10%', left: '10%' }} />
                     <Award className="w-16 h-16 text-collector-purple absolute z-20" style={{ bottom: '20%', right: '15%' }} />
                     <Gem className="w-20 h-20 text-collector-magenta absolute z-20" style={{ top: '15%', right: '20%' }} />
                     <Star className="w-12 h-12 text-collector-orange absolute z-20" style={{ bottom: '15%', left: '25%' }}/>
-                    <Sparkles className="w-32 h-32 text-white/70 absolute inset-0 m-auto" />
                   </div>
                 </div>
                 <div className="absolute -top-8 -right-8 h-24 w-24 animate-float" style={{ animationDelay: "1.5s" }}>
@@ -90,9 +68,6 @@ const Index = () => {
                     <Gem className="w-10 h-10 text-white" />
                   </div>
                 </div>
-                <div className="absolute -bottom-8 -right-8 w-32 h-32 rounded-full bg-collector-purple opacity-60 blur-md"></div>
-                <div className="absolute inset-0 border-4 border-white/20 rounded-full animate-pulse-subtle z-0"></div>
-                <div className="absolute inset-0 border-2 border-white/10 rounded-full animate-spin-slow z-0" style={{ animationDuration: '30s' }}></div>
               </div>
             </div>
           </div>
@@ -103,7 +78,7 @@ const Index = () => {
       <section className="py-16 bg-gradient-to-b from-gray-900 to-gray-800">
         <div className="container max-w-7xl mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4 text-white">How <span className="time-warp-text">Collectopia</span> Works</h2>
+            <h2 className="text-3xl font-bold mb-4 text-white">How <span className="time-warp-text">The Collectors Portal</span> Works</h2>
             <p className="text-lg text-gray-300 max-w-3xl mx-auto">
               Our platform combines AI technology with collector expertise to help you manage and value your collection from any time period.
             </p>
@@ -122,7 +97,7 @@ const Index = () => {
             
             <div className="bg-gray-800/50 backdrop-blur-md p-6 rounded-lg shadow-lg border border-gray-700 hover:border-collector-magenta transition-all duration-300 retro-card">
               <div className="w-12 h-12 bg-collector-magenta/20 rounded-full flex items-center justify-center mb-4">
-                <Sparkles className="h-6 w-6 text-collector-magenta" />
+                <Award className="h-6 w-6 text-collector-magenta" />
               </div>
               <h3 className="text-xl font-semibold mb-2 text-white">AI-Powered Analysis</h3>
               <p className="text-gray-300">
@@ -152,7 +127,7 @@ const Index = () => {
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-4 text-white">Explore <span className="time-warp-text">Every Era</span></h2>
             <p className="text-lg text-gray-300 max-w-3xl mx-auto">
-              From ancient artifacts to modern memorabilia, Collectopia helps you catalog items from any time period.
+              From ancient artifacts to modern memorabilia, The Collectors Portal helps you catalog items from any time period.
             </p>
           </div>
           
@@ -201,7 +176,7 @@ const Index = () => {
                 </div>
               </div>
               <p className="text-gray-300">
-                "Collectopia has transformed how I manage my comic book collection. The AI valuation is surprisingly accurate, and I've discovered some of my books are worth more than I thought!"
+                "The Collectors Portal has transformed how I manage my comic book collection. The AI valuation is surprisingly accurate, and I've discovered some of my books are worth more than I thought!"
               </p>
             </div>
             
@@ -229,18 +204,18 @@ const Index = () => {
         <div className="container max-w-7xl mx-auto px-4 text-center relative z-10">
           <h2 className="text-3xl font-bold mb-4">Ready to <span className="time-warp-text">Discover</span> Your Collection's Value?</h2>
           <p className="text-lg text-gray-200 mb-8 max-w-2xl mx-auto">
-            Join Collectopia today and transform how you manage your collectibles with our AI-powered platform.
+            Join The Collectors Portal today and transform how you manage your collectibles with our AI-powered platform.
           </p>
           {user ? (
             <Link to="/dashboard">
-              <Button size="lg" className="bg-collector-gold hover:bg-amber-500 text-black animate-pulse-glow">
+              <Button size="lg" className="bg-collector-cyan hover:bg-blue-500 text-black">
                 Go to Your Dashboard
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
           ) : (
             <Link to="/register">
-              <Button size="lg" className="bg-collector-gold hover:bg-amber-500 text-black animate-pulse-glow">
+              <Button size="lg" className="bg-collector-cyan hover:bg-blue-500 text-black">
                 Get Started Free
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
@@ -249,15 +224,15 @@ const Index = () => {
           
           <div className="mt-8 flex flex-wrap justify-center gap-6">
             <div className="flex items-center">
-              <Check className="h-5 w-5 text-collector-gold mr-2" />
+              <Check className="h-5 w-5 text-collector-cyan mr-2" />
               <span>No credit card required</span>
             </div>
             <div className="flex items-center">
-              <Check className="h-5 w-5 text-collector-gold mr-2" />
+              <Check className="h-5 w-5 text-collector-cyan mr-2" />
               <span>Free for personal collections</span>
             </div>
             <div className="flex items-center">
-              <Check className="h-5 w-5 text-collector-gold mr-2" />
+              <Check className="h-5 w-5 text-collector-cyan mr-2" />
               <span>Secure and private</span>
             </div>
           </div>
