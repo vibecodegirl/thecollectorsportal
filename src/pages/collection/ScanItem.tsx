@@ -106,7 +106,7 @@ const ScanItem = () => {
         
         toast({
           title: "Image analyzed",
-          description: "The object details have been analyzed using Google Vision AI",
+          description: "The object details have been analyzed using Gemini AI",
         });
       } catch (error) {
         console.error("Error analyzing image:", error);
@@ -150,10 +150,10 @@ const ScanItem = () => {
       const scanResult = await analyzeItem(scanRequest);
       
       if (imageAnalysis) {
-        scanResult.condition = scanResult.condition || "Good";
+        scanResult.condition = scanResult.condition || imageAnalysis.condition || "Good";
         scanResult.type = scanResult.type || imageAnalysis.suggestedType || "Unknown";
         scanResult.notes = scanResult.notes || imageAnalysis.additionalObservations;
-        scanResult.yearProduced = scanResult.yearProduced || imageAnalysis.primaryObject.timePeriod || "Unknown";
+        scanResult.yearProduced = scanResult.yearProduced || imageAnalysis.yearProduced || imageAnalysis.primaryObject.timePeriod || "Unknown";
         
         if (imageAnalysis.primaryObject.material && imageAnalysis.primaryObject.material !== "Unknown material") {
           scanResult.primaryObject = scanResult.primaryObject || {
@@ -178,7 +178,7 @@ const ScanItem = () => {
       
       toast({
         title: "Scan complete",
-        description: "Your item has been analyzed successfully",
+        description: "Your item has been analyzed and valued successfully",
       });
     } catch (error) {
       toast({
@@ -337,7 +337,7 @@ const ScanItem = () => {
         <CardHeader className="pb-2">
           <CardTitle className="text-sm flex items-center">
             <Info className="w-4 h-4 mr-1" />
-            Google Vision AI Analysis
+            Gemini AI Analysis
           </CardTitle>
         </CardHeader>
         <CardContent className="text-sm">

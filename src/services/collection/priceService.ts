@@ -88,6 +88,12 @@ const enhanceSearchQuery = (query: string): string => {
     enhancedQuery += " collectible";
   }
   
+  // Add marketplace terms if not present
+  if (!enhancedQuery.toLowerCase().includes("ebay") && 
+      !enhancedQuery.toLowerCase().includes("etsy")) {
+    enhancedQuery += " ebay etsy marketplace";
+  }
+  
   console.log("Enhanced search query:", enhancedQuery);
   return enhancedQuery;
 };

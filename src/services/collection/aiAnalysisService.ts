@@ -1,3 +1,4 @@
+
 import { CollectionItem } from '@/types/collection';
 import { supabase } from '@/integrations/supabase/client';
 import { AIAnalysisRequest, VisionAnalysisResult } from '@/contexts/CollectionContext';
@@ -14,15 +15,15 @@ export const analyzeCollectionItem = async (
       imageCount: request.images?.length || 0 
     });
     
-    // If we have images, try to analyze them with Vision AI
+    // If we have images, try to analyze them with Gemini
     let visionAnalysis: VisionAnalysisResult | null = null;
     
     if (request.images && request.images.length > 0) {
       try {
         visionAnalysis = await analyzeImageWithVision(request.images[0]);
-        console.log("Vision analysis completed successfully");
+        console.log("Gemini vision analysis completed successfully");
       } catch (error) {
-        console.error("Vision analysis error:", error);
+        console.error("Gemini vision analysis error:", error);
       }
     }
     
@@ -49,7 +50,7 @@ export const analyzeCollectionItem = async (
       return generateMockAnalysis(request);
     }
     
-    // Combine data from both sources with Vision AI taking precedence for certain fields
+    // Combine data from both sources with Gemini taking precedence for certain fields
     const combinedData = await combineAnalysisData(
       analysisData || {}, 
       visionAnalysis,
@@ -80,7 +81,7 @@ export const analyzeImageWithVision = async (image: string): Promise<VisionAnaly
     
     return data;
   } catch (error) {
-    console.error("Error analyzing image with Vision AI:", error);
+    console.error("Error analyzing image with Gemini:", error);
     throw error;
   }
 };
@@ -159,7 +160,7 @@ const combineAnalysisData = async (
                    ? visionData.primaryObject.possibleFunctions[0] : "Unknown")
       };
     } else {
-      // Merge primaryObject data preferring Vision AI data
+      // Merge primaryObject data preferring Gemini data
       combined.primaryObject = {
         ...combined.primaryObject,
         shape: combined.primaryObject.shape || visionData.primaryObject.shape || "Unknown",
@@ -177,16 +178,19 @@ const combineAnalysisData = async (
     }
   }
   
-  // Get price estimate
+  // Get price estimate using Gemini analysis data for a more accurate search
   try {
-    const priceData = await getItemPriceEstimate({
+    // Create a rich search query for better price matching
+    const searchParams = {
       name: combined.name,
       category: combined.category,
       type: combined.type,
       manufacturer: combined.manufacturer,
       yearProduced: combined.yearProduced,
       condition: combined.condition
-    });
+    };
+    
+    const priceData = await getItemPriceEstimate(searchParams);
     
     if (priceData && (priceData.low || priceData.average || priceData.high)) {
       combined.priceEstimate = {

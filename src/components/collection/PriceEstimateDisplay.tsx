@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { PriceEstimate } from '@/types/collection';
 import { Button } from '@/components/ui/button';
-import { Search, Loader2, ExternalLink } from 'lucide-react';
+import { Search, Loader2, ExternalLink, ShoppingBag } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { searchItemPrices } from '@/services/collection/priceService';
 import {
@@ -42,6 +42,7 @@ const PriceEstimateDisplay: React.FC<PriceEstimateDisplayProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [priceRanges, setPriceRanges] = useState<{ low: number | null; average: number | null; high: number | null; count: number } | null>(null);
+  const [marketplaces, setMarketplaces] = useState<Array<{ name: string; url: string; count: number }>>([]);
   const { toast } = useToast();
 
   const handlePriceSearch = async () => {
@@ -69,6 +70,10 @@ const PriceEstimateDisplay: React.FC<PriceEstimateDisplayProps> = ({
       
       if (result.items) {
         setSearchResults(result.items);
+      }
+      
+      if (result.marketplace) {
+        setMarketplaces(result.marketplace);
       }
       
       if (!result.items || result.items.length === 0) {
@@ -145,6 +150,20 @@ const PriceEstimateDisplay: React.FC<PriceEstimateDisplayProps> = ({
                     <Badge variant="outline" className="text-xs">
                       Based on {priceRanges.count} price points
                     </Badge>
+                  </div>
+                </div>
+              )}
+              
+              {marketplaces.length > 0 && (
+                <div className="mt-6 p-4 bg-muted rounded-md">
+                  <h4 className="text-sm font-medium mb-2">Marketplace Sources</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {marketplaces.slice(0, 5).map((marketplace, index) => (
+                      <Badge key={index} variant="secondary" className="flex items-center">
+                        <ShoppingBag className="h-3 w-3 mr-1" />
+                        {marketplace.name} ({marketplace.count})
+                      </Badge>
+                    ))}
                   </div>
                 </div>
               )}
