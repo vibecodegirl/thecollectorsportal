@@ -15,7 +15,8 @@ import {
   ImageIcon,
   Edit,
   UploadCloud,
-  Info
+  Info,
+  Search
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useCollection, VisionAnalysisResult } from '@/contexts/CollectionContext';
@@ -24,6 +25,7 @@ import { CollectionItem } from '@/types/collection';
 import { useAuth } from '@/contexts/AuthContext';
 import CameraCapture from '@/components/camera/CameraCapture';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { searchByImage } from '@/services/collection/priceService';
 
 const ScanItem = () => {
   const navigate = useNavigate();
@@ -40,7 +42,7 @@ const ScanItem = () => {
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("upload");
   const [imageAnalysis, setImageAnalysis] = useState<VisionAnalysisResult | null>(null);
-  
+  const [imageSearchResults, setImageSearchResults] = useState<any | null>(null);
   const [isCameraSupported, setIsCameraSupported] = useState<boolean | null>(null);
   
   React.useEffect(() => {
@@ -79,10 +81,27 @@ const ScanItem = () => {
     setImages(prevImages => [...prevImages, ...newImages]);
   };
   
-  const handleCameraCapture = (imageSrc: string) => {
+  const handleCameraCapture = (imageSrc: string, analysisResult?: any) => {
     setImages(prevImages => [...prevImages, imageSrc]);
     setIsCameraActive(false);
     setActiveTab("upload");
+    
+    if (analysisResult && !analysisResult.error) {
+      setImageSearchResults(analysisResult);
+      
+      if (analysisResult.title && !itemName) {
+        setItemName(analysisResult.title);
+      }
+      
+      if (analysisResult.category && !category) {
+        setCategory(analysisResult.category);
+      }
+      
+      toast({
+        title: "Image identified",
+        description: `Identified as: ${analysisResult.title || 'Unknown item'}`,
+      });
+    }
   };
   
   const removeImage = (index: number) => {
@@ -93,15 +112,35 @@ const ScanItem = () => {
     if (images.length > 0 && images[0]) {
       setScanning(true);
       try {
+        const imageBase64 = images[0].split(',')[1];
+        const searchResults = await searchByImage(imageBase64);
+        
+        if (!searchResults.error) {
+          setImageSearchResults(searchResults);
+          
+          if (!itemName && searchResults.title) {
+            setItemName(searchResults.title);
+          }
+          
+          if (!category && searchResults.category) {
+            setCategory(searchResults.category);
+          }
+          
+          toast({
+            title: "Image identified",
+            description: `Identified as: ${searchResults.title || 'Unknown item'}`,
+          });
+        }
+        
         const analysis = await analyzeImage(images[0]);
         setImageAnalysis(analysis);
         
         if (!itemName && analysis.suggestedType) {
-          setItemName(analysis.suggestedType);
+          setItemName(prevName => prevName || analysis.suggestedType);
         }
         
         if (!category && analysis.suggestedCategory) {
-          setCategory(analysis.suggestedCategory);
+          setCategory(prevCategory => prevCategory || analysis.suggestedCategory);
         }
         
         toast({
@@ -254,6 +293,7 @@ const ScanItem = () => {
         <CameraCapture 
           onCapture={handleCameraCapture}
           onClose={() => setIsCameraActive(false)}
+          analyzeImage={true}
         />
       );
     }
@@ -422,6 +462,92 @@ const ScanItem = () => {
     );
   };
 
+  const renderImageSearchResults = () => {
+    if (!imageSearchResults || !imageSearchResults.matches || imageSearchResults.matches.length === 0) {
+      return null;
+    }
+    
+    return (
+      <Card className="mt-6">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center">
+            <Search className="w-4 h-4 mr-1" />
+            Google Image Search Results
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="text-sm">
+          <div className="space-y-3">
+            {imageSearchResults.title && (
+              <div>
+                <p className="font-medium">Identified As:</p>
+                <p className="text-muted-foreground">{imageSearchResults.title}</p>
+              </div>
+            )}
+            
+            {imageSearchResults.category && (
+              <div>
+                <p className="font-medium">Category:</p>
+                <p className="text-muted-foreground">{imageSearchResults.category}</p>
+              </div>
+            )}
+            
+            {imageSearchResults.description && (
+              <div>
+                <p className="font-medium">Description:</p>
+                <p className="text-muted-foreground">{imageSearchResults.description}</p>
+              </div>
+            )}
+            
+            {imageSearchResults.detectedObjects && imageSearchResults.detectedObjects.length > 0 && (
+              <div>
+                <p className="font-medium">Detected Features:</p>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {imageSearchResults.detectedObjects.map((obj: string, index: number) => (
+                    <span key={index} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100">
+                      {obj}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {imageSearchResults.matches && imageSearchResults.matches.length > 0 && (
+              <div>
+                <p className="font-medium mt-4 mb-2">Similar Items:</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {imageSearchResults.matches.map((match: any, index: number) => (
+                    <a 
+                      key={index} 
+                      href={match.link} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="block hover:opacity-90 transition-opacity"
+                    >
+                      <div className="aspect-square rounded-md overflow-hidden border mb-1">
+                        {match.imageUrl ? (
+                          <img 
+                            src={match.imageUrl} 
+                            alt={match.title} 
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                            <ImageIcon className="h-6 w-6 text-gray-400" />
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-xs truncate">{match.title}</p>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
     <MainLayout title="Scan Item">
       <div className="container max-w-7xl mx-auto px-4 pb-12">
@@ -504,7 +630,7 @@ const ScanItem = () => {
                       ))}
                     </div>
                     
-                    {!imageAnalysis && images.length > 0 && (
+                    {!imageAnalysis && !imageSearchResults && images.length > 0 && (
                       <Button 
                         variant="outline" 
                         className="mt-4 w-full"
@@ -526,6 +652,8 @@ const ScanItem = () => {
                     )}
                   </div>
                 )}
+                
+                {renderImageSearchResults()}
                 
                 {renderImageAnalysisDetails()}
               </CardContent>
