@@ -28,7 +28,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const ScanItem = () => {
   const navigate = useNavigate();
-  const { analyzeItem, analyzeImage } = useCollection();
+  const { analyzeItem, analyzeImage, addItem } = useCollection();  // Get addItem from useCollection at the top level
   const { user } = useAuth();
   
   const [activeStep, setActiveStep] = useState(1);
@@ -214,7 +214,8 @@ const ScanItem = () => {
         category: scanResults.category || category
       };
       
-      const newItem = await useCollection().addItem(itemData as CollectionItem);
+      // Use the addItem from useCollection hook that was already initialized at the top of the component
+      const newItem = await addItem(itemData as CollectionItem);
       
       toast({
         title: "Item added",
