@@ -1,3 +1,4 @@
+
 import { CollectionItem } from '@/types/collection';
 import { supabase } from '@/integrations/supabase/client';
 import { 
@@ -23,7 +24,7 @@ export const addCollectionItem = async (
   item: Omit<CollectionItem, 'id' | 'dateAdded' | 'lastUpdated'>, 
   userId: string
 ): Promise<CollectionItem> => {
-  const supabaseItem = transformCollectionItemToDatabase(item, userId);
+  const supabaseItem = transformCollectionItemToDatabase({...item, userId});
 
   const { data, error } = await supabase
     .from('collection_items')

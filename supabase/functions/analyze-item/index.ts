@@ -18,6 +18,8 @@ serve(async (req) => {
   try {
     const { images, category, description, name } = await req.json();
     
+    console.log("Received analysis request:", { category, description, name, imageCount: images?.length || 0 });
+    
     // Implement your item analysis logic here
     // This is a placeholder implementation
     
@@ -52,6 +54,8 @@ serve(async (req) => {
         level: 'medium'
       }
     };
+    
+    console.log("Returning analysis:", mockAnalysis);
     
     return new Response(
       JSON.stringify(mockAnalysis),
