@@ -72,10 +72,26 @@ const Index = () => {
               <div className="relative">
                 <div className="absolute -top-4 -left-4 w-full h-full rounded-lg bg-collector-gold opacity-70 blur-md animate-pulse"></div>
                 <img 
-                  src="https://images.unsplash.com/photo-1581092580497-e0d23cbdf1dc?ixlib=rb-1.2.1&auto=format&fit=crop&q=80&w=600" 
-                  alt="Collection showcase" 
+                  src="https://images.unsplash.com/photo-1501286353178-1ec881214838?ixlib=rb-1.2.1&auto=format&fit=crop&q=80&w=600" 
+                  alt="Fun monkey with collectibles" 
                   className="rounded-lg shadow-lg relative z-10 animate-float"
                 />
+                {/* Add a fun floating collectible element */}
+                <div className="absolute -top-8 -right-8 h-24 w-24 animate-float" style={{ animationDelay: "1.5s" }}>
+                  <img 
+                    src="https://images.unsplash.com/photo-1582562124811-c09040d0a901?ixlib=rb-1.2.1&auto=format&fit=crop&q=80&w=200" 
+                    alt="Collectible item" 
+                    className="rounded-full object-cover h-full w-full border-4 border-collector-cyan shadow-lg"
+                  />
+                </div>
+                {/* Add another floating collectible element */}
+                <div className="absolute -bottom-10 left-12 h-20 w-20 animate-float" style={{ animationDelay: "0.7s" }}>
+                  <img 
+                    src="https://images.unsplash.com/photo-1535268647677-300dbf3d78d1?ixlib=rb-1.2.1&auto=format&fit=crop&q=80&w=200" 
+                    alt="Collectible item" 
+                    className="rounded-full object-cover h-full w-full border-4 border-collector-magenta shadow-lg"
+                  />
+                </div>
                 <div className="absolute -bottom-8 -right-8 w-32 h-32 rounded-full bg-collector-purple opacity-60 blur-md"></div>
               </div>
             </div>
