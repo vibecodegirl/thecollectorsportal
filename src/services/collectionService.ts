@@ -55,12 +55,18 @@ export const updateCollectionItem = async (
 };
 
 export const deleteCollectionItem = async (itemId: string): Promise<boolean> => {
-  const { error } = await supabase
+  const { error, count } = await supabase
     .from('collection_items')
     .delete()
-    .eq('id', itemId);
+    .eq('id', itemId)
+    .select('*', { count: 'exact', head: true });
 
   if (error) throw error;
+  
+  // Check if any rows were affected
+  if (count === 0) {
+    throw new Error("Item not found or already deleted");
+  }
   
   return true;
 };

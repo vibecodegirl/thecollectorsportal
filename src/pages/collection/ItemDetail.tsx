@@ -21,6 +21,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -30,9 +41,11 @@ import PriceEstimateDisplay from '@/components/collection/PriceEstimateDisplay';
 import { 
   ArrowLeft, 
   Calendar, 
+  Archive,
   Edit, 
   ImageIcon, 
   Info, 
+  DollarSign,
   MoreHorizontal, 
   Ruler, 
   Scale, 
@@ -40,14 +53,26 @@ import {
   Clock
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { SaleInfo } from '@/types/collection';
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const ItemDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const { getCollection, deleteItem } = useCollection();
+  const { getCollection, deleteItem, archiveItem, markItemAsSold } = useCollection();
   const navigate = useNavigate();
   
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
+  const [sellDialogOpen, setSellDialogOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  
+  const [saleInfo, setSaleInfo] = useState<SaleInfo>({
+    salePrice: 0,
+    buyer: '',
+    saleNotes: ''
+  });
   
   if (!id) {
     navigate('/collection');
@@ -65,9 +90,31 @@ const ItemDetail = () => {
   const displayImages = item.images && item.images.length > 0 ? item.images : [defaultImage];
   
   const handleDelete = async () => {
-    const success = await deleteItem(id);
-    if (success) {
-      navigate('/collection');
+    try {
+      const success = await deleteItem(id);
+      if (success) {
+        navigate('/collection');
+      }
+    } catch (error) {
+      console.error("Error deleting item:", error);
+    }
+  };
+  
+  const handleArchive = async () => {
+    try {
+      await archiveItem(id);
+      setArchiveDialogOpen(false);
+    } catch (error) {
+      console.error("Error archiving item:", error);
+    }
+  };
+  
+  const handleMarkAsSold = async () => {
+    try {
+      await markItemAsSold(id, saleInfo);
+      setSellDialogOpen(false);
+    } catch (error) {
+      console.error("Error marking item as sold:", error);
     }
   };
   
@@ -78,6 +125,21 @@ const ItemDetail = () => {
       return 'Unknown date';
     }
   };
+  
+  const formatCurrency = (amount?: number) => {
+    if (amount === undefined) return 'Not specified';
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  // Don't show archive or sell options for items that are already archived or sold
+  const showActionButtons = item.status === 'active';
+  const isSold = item.status === 'sold';
+  const isArchived = item.status === 'archived';
 
   return (
     <MainLayout>
@@ -94,36 +156,121 @@ const ItemDetail = () => {
           </Button>
           <h1 className="text-2xl font-bold flex-grow">{item.name}</h1>
           <div className="flex gap-2">
+            {item.status !== 'active' && (
+              <Badge variant={isSold ? "default" : "outline"} className={isSold ? "bg-green-500" : ""}>
+                {isSold ? 'Sold' : 'Archived'}
+              </Badge>
+            )}
+            
             <Link to={`/collection/${id}/edit`}>
               <Button variant="outline" size="sm">
                 <Edit className="h-4 w-4 mr-2" />
                 Edit
               </Button>
             </Link>
-            <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-              <DialogTrigger asChild>
+            
+            {showActionButtons && (
+              <>
+                <AlertDialog open={archiveDialogOpen} onOpenChange={setArchiveDialogOpen}>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Archive className="h-4 w-4 mr-2" />
+                      Archive
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Archive item</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to archive "{item.name}"? It will be moved to your archives.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleArchive}>Archive</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+                
+                <Dialog open={sellDialogOpen} onOpenChange={setSellDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm" className="text-green-500">
+                      <DollarSign className="h-4 w-4 mr-2" />
+                      Mark as Sold
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Mark Item as Sold</DialogTitle>
+                      <DialogDescription>
+                        Enter the details of the sale for "{item.name}".
+                      </DialogDescription>
+                    </DialogHeader>
+                    
+                    <div className="grid gap-4 py-4">
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="salePrice" className="text-right">Sale Price</Label>
+                        <Input
+                          id="salePrice"
+                          type="number"
+                          className="col-span-3"
+                          value={saleInfo.salePrice || ''}
+                          onChange={(e) => setSaleInfo({...saleInfo, salePrice: parseFloat(e.target.value) || 0})}
+                        />
+                      </div>
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="buyer" className="text-right">Buyer</Label>
+                        <Input
+                          id="buyer"
+                          className="col-span-3"
+                          value={saleInfo.buyer || ''}
+                          onChange={(e) => setSaleInfo({...saleInfo, buyer: e.target.value})}
+                        />
+                      </div>
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="saleNotes" className="text-right">Notes</Label>
+                        <Input
+                          id="saleNotes"
+                          className="col-span-3"
+                          value={saleInfo.saleNotes || ''}
+                          onChange={(e) => setSaleInfo({...saleInfo, saleNotes: e.target.value})}
+                        />
+                      </div>
+                    </div>
+                    
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setSellDialogOpen(false)}>
+                        Cancel
+                      </Button>
+                      <Button onClick={handleMarkAsSold}>
+                        Mark as Sold
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </>
+            )}
+            
+            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+              <AlertDialogTrigger asChild>
                 <Button variant="outline" size="sm" className="text-red-500">
                   <Trash className="h-4 w-4 mr-2" />
                   Delete
                 </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Delete item</DialogTitle>
-                  <DialogDescription>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete item</AlertDialogTitle>
+                  <AlertDialogDescription>
                     Are you sure you want to delete "{item.name}" from your collection? This action cannot be undone.
-                  </DialogDescription>
-                </DialogHeader>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button variant="destructive" onClick={handleDelete}>
-                    Delete
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDelete} className="bg-red-500 hover:bg-red-600">Delete</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </div>
         
@@ -184,6 +331,39 @@ const ItemDetail = () => {
                   <h4 className="font-medium mb-1">Rarity</h4>
                   <p className="text-gray-700">{item.rarity}</p>
                 </div>
+                
+                {isSold && item.saleInfo && (
+                  <>
+                    <Separator />
+                    <div>
+                      <h4 className="font-medium mb-1">Sale Information</h4>
+                      <Table>
+                        <TableBody>
+                          <TableRow>
+                            <TableCell className="font-medium">Sale Date</TableCell>
+                            <TableCell>{item.saleInfo.saleDate ? formatDate(item.saleInfo.saleDate) : 'Not recorded'}</TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell className="font-medium">Sale Price</TableCell>
+                            <TableCell>{formatCurrency(item.saleInfo.salePrice)}</TableCell>
+                          </TableRow>
+                          {item.saleInfo.buyer && (
+                            <TableRow>
+                              <TableCell className="font-medium">Buyer</TableCell>
+                              <TableCell>{item.saleInfo.buyer}</TableCell>
+                            </TableRow>
+                          )}
+                          {item.saleInfo.saleNotes && (
+                            <TableRow>
+                              <TableCell className="font-medium">Notes</TableCell>
+                              <TableCell>{item.saleInfo.saleNotes}</TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
           </div>

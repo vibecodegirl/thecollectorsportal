@@ -27,11 +27,25 @@ export type PrimaryObject = {
   possibleFunctions?: string[];
 };
 
+// Define a status enum for collection items
+export type ItemStatus = 'active' | 'archived' | 'sold';
+
+export type SaleInfo = {
+  saleDate?: string;
+  salePrice?: number;
+  buyer?: string;
+  saleNotes?: string;
+};
+
 export type CollectionItem = {
   id: string;
   userId: string;
   dateAdded: string;
   lastUpdated: string;
+  
+  // Status
+  status: ItemStatus;
+  saleInfo?: SaleInfo;
   
   // Category
   category: string;

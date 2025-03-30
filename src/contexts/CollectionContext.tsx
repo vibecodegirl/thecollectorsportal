@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { CollectionItem } from '../types/collection';
+import { CollectionItem, ItemStatus, SaleInfo } from '../types/collection';
 import { useAuth } from './AuthContext';
 import { useToast } from '@/components/ui/use-toast';
 import {
@@ -15,11 +15,14 @@ interface CollectionContextType {
   collections: CollectionItem[];
   loading: boolean;
   getCollection: (id: string) => CollectionItem | undefined;
-  addItem: (item: Omit<CollectionItem, 'id' | 'dateAdded' | 'lastUpdated'>) => Promise<CollectionItem>;
+  addItem: (item: Omit<CollectionItem, 'id' | 'dateAdded' | 'lastUpdated' | 'status'>) => Promise<CollectionItem>;
   updateItem: (item: CollectionItem) => Promise<CollectionItem>;
   deleteItem: (itemId: string) => Promise<boolean>;
+  archiveItem: (itemId: string) => Promise<CollectionItem>;
+  markItemAsSold: (itemId: string, saleInfo: SaleInfo) => Promise<CollectionItem>;
   analyzeItem: (request: AIAnalysisRequest) => Promise<Partial<CollectionItem>>;
   refreshCollections: () => void;
+  filteredCollections: (status?: ItemStatus) => CollectionItem[];
 }
 
 export interface AIAnalysisRequest {
@@ -52,7 +55,12 @@ export const CollectionProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     try {
       const items = await fetchCollectionItems(user.id);
-      setCollections(items);
+      // Ensure all items have a status field (for backward compatibility)
+      const itemsWithStatus = items.map(item => ({
+        ...item,
+        status: item.status || 'active' as ItemStatus
+      }));
+      setCollections(itemsWithStatus);
     } catch (error: any) {
       toast({
         title: "Error loading collections",
@@ -72,11 +80,17 @@ export const CollectionProvider = ({ children }: { children: ReactNode }) => {
     return collections.find(item => item.id === id);
   };
 
-  const addItem = async (item: Omit<CollectionItem, 'id' | 'dateAdded' | 'lastUpdated'>) => {
+  const addItem = async (item: Omit<CollectionItem, 'id' | 'dateAdded' | 'lastUpdated' | 'status'>) => {
     try {
       if (!user) throw new Error('User must be logged in to add items');
       
-      const newItem = await addCollectionItem(item, user.id);
+      // Set default status to active
+      const itemWithStatus = {
+        ...item,
+        status: 'active' as ItemStatus
+      };
+      
+      const newItem = await addCollectionItem(itemWithStatus, user.id);
       setCollections(prev => [...prev, newItem]);
       
       toast({
@@ -126,7 +140,15 @@ export const CollectionProvider = ({ children }: { children: ReactNode }) => {
       if (!user) throw new Error('User must be logged in to delete items');
       
       await deleteCollectionItem(itemId);
-      setCollections(prev => prev.filter(i => i.id !== itemId));
+      
+      // Verify the item was removed from the database before updating the state
+      setCollections(prev => {
+        const filteredItems = prev.filter(i => i.id !== itemId);
+        if (filteredItems.length === prev.length) {
+          throw new Error("Item could not be deleted. It may no longer exist.");
+        }
+        return filteredItems;
+      });
       
       toast({
         title: "Item deleted",
@@ -140,7 +162,56 @@ export const CollectionProvider = ({ children }: { children: ReactNode }) => {
         description: error.message || "Failed to delete the item",
         variant: "destructive",
       });
-      return false;
+      throw error;
+    }
+  };
+  
+  const archiveItem = async (itemId: string) => {
+    try {
+      const item = getCollection(itemId);
+      if (!item) throw new Error('Item not found');
+      
+      const updatedItem = {
+        ...item,
+        status: 'archived' as ItemStatus,
+        lastUpdated: new Date().toISOString()
+      };
+      
+      return await updateItem(updatedItem);
+    } catch (error: any) {
+      toast({
+        title: "Error archiving item",
+        description: error.message || "Failed to archive the item",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+  
+  const markItemAsSold = async (itemId: string, saleInfo: SaleInfo) => {
+    try {
+      const item = getCollection(itemId);
+      if (!item) throw new Error('Item not found');
+      
+      const updatedItem = {
+        ...item,
+        status: 'sold' as ItemStatus,
+        saleInfo: {
+          ...item.saleInfo,
+          ...saleInfo,
+          saleDate: saleInfo.saleDate || new Date().toISOString()
+        },
+        lastUpdated: new Date().toISOString()
+      };
+      
+      return await updateItem(updatedItem);
+    } catch (error: any) {
+      toast({
+        title: "Error marking item as sold",
+        description: error.message || "Failed to mark the item as sold",
+        variant: "destructive",
+      });
+      throw error;
     }
   };
 
@@ -168,6 +239,11 @@ export const CollectionProvider = ({ children }: { children: ReactNode }) => {
       throw error;
     }
   };
+  
+  const filteredCollections = (status?: ItemStatus) => {
+    if (!status) return collections;
+    return collections.filter(item => item.status === status);
+  };
 
   return (
     <CollectionContext.Provider 
@@ -178,8 +254,11 @@ export const CollectionProvider = ({ children }: { children: ReactNode }) => {
         addItem, 
         updateItem, 
         deleteItem,
+        archiveItem,
+        markItemAsSold,
         analyzeItem,
-        refreshCollections
+        refreshCollections,
+        filteredCollections
       }}
     >
       {children}
