@@ -46,7 +46,7 @@ serve(async (req) => {
     console.log(`Searching for prices with query: ${query}`);
     
     // Enhanced search query for better price results
-    const enhancedQuery = `${query} price value for sale collectible ebay etsy`;
+    const enhancedQuery = `${query} price value for sale collectible`;
     
     // Call the Google Custom Search JSON API
     const searchUrl = new URL("https://www.googleapis.com/customsearch/v1");
