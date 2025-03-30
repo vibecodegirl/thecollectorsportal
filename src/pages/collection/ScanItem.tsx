@@ -281,10 +281,13 @@ const ScanItem = () => {
       userId: user.id,
       images,
       name: scanResults.name || itemName,
-      category: scanResults.category || category
+      category: scanResults.category || category,
+      status: 'active',
+      dateAdded: new Date().toISOString(),
+      lastUpdated: new Date().toISOString()
     };
     
-    sessionStorage.setItem('scanResults', JSON.stringify(itemData));
+    sessionStorage.setItem('editItemData', JSON.stringify(itemData));
     navigate('/add-item');
   };
   

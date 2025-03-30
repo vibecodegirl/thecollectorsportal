@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useCollection } from '@/contexts/CollectionContext';
@@ -75,8 +74,32 @@ const AddEditItem = () => {
       } else {
         navigate('/collection');
       }
+    } else {
+      // Check if we have data from scan results in sessionStorage
+      const editItemDataString = sessionStorage.getItem('editItemData');
+      if (editItemDataString) {
+        try {
+          const editItemData = JSON.parse(editItemDataString);
+          setFormData(editItemData);
+          
+          // If we have notes, add them to the AI description for potential future analysis
+          if (editItemData.notes) {
+            setAiDescription(editItemData.notes);
+          }
+          
+          // Clear the session storage after we've used it
+          sessionStorage.removeItem('editItemData');
+          
+          toast({
+            title: "Data pre-filled",
+            description: "Your scanned item data has been loaded into the form",
+          });
+        } catch (error) {
+          console.error("Error parsing session storage data:", error);
+        }
+      }
     }
-  }, [isEditing, id, getCollection, navigate]);
+  }, [isEditing, id, getCollection, navigate, user?.id]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
