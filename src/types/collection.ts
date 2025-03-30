@@ -71,3 +71,10 @@ export interface CollectionItem {
   saleInfo?: SaleInfo;
   primaryObject?: PrimaryObject;
 }
+
+export interface User {
+  id: string;
+  email?: string;
+  name?: string;
+  avatar_url?: string;
+}

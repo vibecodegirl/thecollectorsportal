@@ -2,7 +2,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Camera, SwitchCamera, Ban, ImageDown, Loader2 } from 'lucide-react';
-import { useCollection } from '@/contexts/CollectionContext';
 
 interface CameraCaptureProps {
   onCapture: (imageSrc: string) => void;

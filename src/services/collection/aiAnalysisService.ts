@@ -1,4 +1,3 @@
-
 import { CollectionItem } from '@/types/collection';
 import { supabase } from '@/integrations/supabase/client';
 import { AIAnalysisRequest, VisionAnalysisResult } from '@/contexts/CollectionContext';
@@ -277,12 +276,12 @@ const generateMockAnalysis = (request: AIAnalysisRequest): Partial<CollectionIte
       shape: description.includes("round") ? "Round/Circular" : description.includes("square") ? "Square/Rectangular" : "Irregular",
       colors: {
         dominant: description.includes("blue") ? "Blue" : description.includes("red") ? "Red" : "Neutral",
-        accents: description.includes("gold") ? "Gold accents" : description.includes("silver") ? "Silver accents" : "No distinct accents"
+        accents: [description.includes("gold") ? "Gold" : description.includes("silver") ? "Silver" : "None"]
       },
       texture: description.includes("smooth") ? "Smooth" : description.includes("rough") ? "Rough/Textured" : "Mixed texture",
       material: description.includes("wood") ? "Wood" : description.includes("metal") ? "Metal" : description.includes("ceramic") ? "Ceramic" : "Unknown material",
-      distinguishingFeatures: description.includes("signature") ? "Contains signature or maker's mark" : 
-                             description.includes("pattern") ? "Distinctive pattern or design" : "No significant distinguishing features noted",
+      distinguishingFeatures: [description.includes("signature") ? "Contains signature or maker's mark" : 
+                             description.includes("pattern") ? "Distinctive pattern or design" : "No significant distinguishing features noted"],
       style: description.includes("modern") ? "Modern/Contemporary" : 
              description.includes("antique") ? "Antique/Vintage" : 
              description.includes("Art Deco") ? "Art Deco" : "Indeterminate style",

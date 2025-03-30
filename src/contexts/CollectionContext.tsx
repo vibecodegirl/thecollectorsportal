@@ -279,21 +279,21 @@ export const CollectionProvider = ({ children }: { children: ReactNode }) => {
     try {
       toast({
         title: "Analyzing image",
-        description: "Google Vision AI is analyzing your image...",
+        description: "Gemini AI is analyzing your image...",
       });
       
       const result = await analyzeImageWithVision(image);
       
       toast({
         title: "Image analysis complete",
-        description: "Vision analysis has identified key features of your item",
+        description: "Gemini AI has identified key features of your item",
       });
       
       return result;
     } catch (error: any) {
       toast({
         title: "Image analysis failed",
-        description: error.message || "Failed to analyze the image with Vision AI",
+        description: error.message || "Failed to analyze the image with Gemini AI",
         variant: "destructive",
       });
       throw error;

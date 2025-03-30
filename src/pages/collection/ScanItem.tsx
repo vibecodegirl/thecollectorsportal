@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
@@ -206,7 +205,7 @@ const ScanItem = () => {
         category: scanResults.category || category
       };
       
-      const newItem = await addItem(itemData as CollectionItem);
+      const newItem = await useCollection().addItem(itemData as CollectionItem);
       
       toast({
         title: "Item added",

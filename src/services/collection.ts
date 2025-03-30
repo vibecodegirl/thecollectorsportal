@@ -106,14 +106,14 @@ export const analyzeCollectionItem = async (request: {
       imageCount: request.images?.length || 0 
     });
     
-    // If we have images, first analyze with Vision AI
+    // If we have images, first analyze with Gemini AI
     let visionAnalysis = null;
     if (request.images && request.images.length > 0) {
       try {
         visionAnalysis = await analyzeImageWithVision(request.images[0]);
-        console.log("Vision analysis received:", visionAnalysis);
+        console.log("Gemini analysis received:", visionAnalysis);
       } catch (error) {
-        console.error("Vision analysis error:", error);
+        console.error("Gemini analysis error:", error);
       }
     }
     
@@ -212,7 +212,7 @@ export const analyzeCollectionItem = async (request: {
   }
 };
 
-// Analyze an image using Google Vision AI
+// Analyze an image using Gemini AI
 export const analyzeImageWithVision = async (imageData: string) => {
   try {
     const response = await supabase.functions.invoke('analyze-with-vision', {
@@ -224,7 +224,7 @@ export const analyzeImageWithVision = async (imageData: string) => {
     if (response.error) throw response.error;
     return response.data;
   } catch (error) {
-    console.error("Vision API analysis error:", error);
+    console.error("Gemini API analysis error:", error);
     throw error;
   }
 };
