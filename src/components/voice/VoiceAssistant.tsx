@@ -6,10 +6,12 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 
-// Define types for the ElevenLabs API message structure
-interface ElevenLabsMessage {
+// Match the type structure expected by the ElevenLabs API
+type Role = 'user' | 'agent' | 'ai';
+
+interface MessageProps {
   message: string;
-  source: 'user' | 'agent';
+  source: Role;
 }
 
 const VoiceAssistant = () => {
@@ -19,8 +21,8 @@ const VoiceAssistant = () => {
   const { toast } = useToast();
   
   const conversation = useConversation({
-    onMessage: (message: ElevenLabsMessage) => {
-      if (message.source === 'agent') {
+    onMessage: (message: MessageProps) => {
+      if (message.source === 'agent' || message.source === 'ai') {
         setMessages(prev => [...prev, { content: message.message, sender: 'assistant' }]);
       } else if (message.source === 'user') {
         setMessages(prev => [...prev, { content: message.message, sender: 'user' }]);
