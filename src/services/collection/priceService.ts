@@ -17,22 +17,6 @@ interface SearchResult {
     url: string;
     count: number;
   }[];
-  error?: string;
-  details?: string;
-}
-
-interface ImageSearchResult {
-  title?: string;
-  category?: string;
-  type?: string;
-  description?: string;
-  matches?: {
-    title: string;
-    link: string;
-    description?: string;
-    imageUrl?: string;
-  }[];
-  error?: string;
 }
 
 export const searchItemPrices = async (query: string): Promise<SearchResult> => {
@@ -46,7 +30,6 @@ export const searchItemPrices = async (query: string): Promise<SearchResult> => 
       body: { query: enhancedQuery }
     });
 
-    // Handle function error responses
     if (response.error) {
       console.error("Supabase function error:", response.error);
       throw new Error(`Error calling search-prices: ${response.error.message}`);
@@ -56,18 +39,6 @@ export const searchItemPrices = async (query: string): Promise<SearchResult> => 
     if (!data) {
       console.log("No data returned from search-prices function");
       return { items: [] };
-    }
-    
-    // Check if the response contains an error message (API returned 200 but with error details)
-    if (data.error) {
-      console.error("Search API error:", data.error, data.details || '');
-      return { 
-        items: data.items || [],
-        priceRanges: data.priceRanges,
-        marketplace: data.marketplace,
-        error: data.error,
-        details: data.details
-      };
     }
     
     console.log("Search results:", data);
@@ -87,58 +58,7 @@ export const searchItemPrices = async (query: string): Promise<SearchResult> => 
     };
   } catch (error) {
     console.error("Error searching for item prices:", error);
-    return { 
-      items: [],
-      error: error instanceof Error ? error.message : "Unknown error occurred"
-    };
-  }
-};
-
-// New function for Google image search to help identify items
-export const searchByImage = async (imageBase64: string): Promise<ImageSearchResult> => {
-  try {
-    console.log("Searching for items using image analysis");
-    
-    const response = await supabase.functions.invoke('search-by-image', {
-      body: { image: imageBase64 }
-    });
-
-    // Handle function error responses
-    if (response.error) {
-      console.error("Supabase function error:", response.error);
-      throw new Error(`Error calling search-by-image: ${response.error.message}`);
-    }
-    
-    const data = response.data;
-    if (!data) {
-      console.log("No data returned from search-by-image function");
-      return { matches: [] };
-    }
-    
-    // Check if the response contains an error message
-    if (data.error) {
-      console.error("Image search API error:", data.error);
-      return { 
-        matches: data.matches || [],
-        error: data.error
-      };
-    }
-    
-    console.log("Image search results:", data);
-    
-    return {
-      title: data.title,
-      category: data.category,
-      type: data.type,
-      description: data.description,
-      matches: data.matches || []
-    };
-  } catch (error) {
-    console.error("Error searching with image:", error);
-    return { 
-      matches: [],
-      error: error instanceof Error ? error.message : "Unknown error occurred"
-    };
+    return { items: [] };
   }
 };
 
@@ -186,7 +106,7 @@ const extractPriceFromSnippet = (snippet?: string): string | undefined => {
   return priceMatch ? priceMatch[0].trim() : undefined;
 };
 
-// Get estimated price ranges for an item using its details
+// New function to get estimated price ranges for an item using its details
 export const getItemPriceEstimate = async (item: {
   name?: string;
   category?: string;
