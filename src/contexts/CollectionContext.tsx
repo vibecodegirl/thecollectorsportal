@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { CollectionItem, ItemStatus, SaleInfo } from '../types/collection';
 import { useAuth } from './AuthContext';
@@ -157,7 +158,7 @@ export const CollectionProvider = ({ children }: { children: ReactNode }) => {
     try {
       if (!user) throw new Error('User must be logged in to delete items');
       
-      await deleteCollectionItem(itemId);
+      await deleteCollectionItem(itemId, user.id);
       
       setCollections(prev => {
         const filteredItems = prev.filter(i => i.id !== itemId);
