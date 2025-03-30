@@ -27,15 +27,15 @@ const MainLayout: React.FC<MainLayoutProps> = ({
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-900 text-white">
+    <div className="min-h-screen flex flex-col bg-white text-gray-800">
       {showHeader && (
-        <header className="border-b border-gray-800 backdrop-blur-md bg-gray-900/80 sticky top-0 z-50">
-          <div className="container max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+        <header className="border-b border-gray-200 backdrop-blur-md bg-white/90 sticky top-0 z-50 shadow-sm">
+          <div className="container max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
             <Link to="/" className="flex items-center space-x-2">
               <div className="relative">
-                <Package className="h-8 w-8 text-collector-cyan relative z-10" />
+                <Package className="h-8 w-8 text-collector-purple relative z-10" />
               </div>
-              <span className="text-2xl font-bold time-warp-text">
+              <span className="text-2xl font-bold bg-gradient-to-r from-collector-purple to-collector-cyan bg-clip-text text-transparent">
                 The Collectors Portal
               </span>
             </Link>
@@ -44,25 +44,25 @@ const MainLayout: React.FC<MainLayoutProps> = ({
               {user ? (
                 <>
                   <Link to="/dashboard">
-                    <Button variant="ghost" className="text-gray-300 hover:text-white hover:bg-gray-800">
+                    <Button variant="ghost" className="text-gray-700 hover:text-collector-purple hover:bg-collector-pastel-purple">
                       <Home className="mr-2 h-4 w-4" />
                       Dashboard
                     </Button>
                   </Link>
                   <Link to="/collection">
-                    <Button variant="ghost" className="text-gray-300 hover:text-white hover:bg-gray-800">
+                    <Button variant="ghost" className="text-gray-700 hover:text-collector-purple hover:bg-collector-pastel-purple">
                       <BookOpen className="mr-2 h-4 w-4" />
                       Collection
                     </Button>
                   </Link>
                   <Link to="/add-item">
-                    <Button variant="outline" className="border-gray-700 text-gray-300 hover:bg-gray-800">
+                    <Button variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-100">
                       <Plus className="mr-2 h-4 w-4" />
                       Add Item
                     </Button>
                   </Link>
                   <Link to="/scan">
-                    <Button className="bg-collector-purple hover:bg-purple-600 text-white">
+                    <Button className="bg-collector-purple hover:bg-purple-700 text-white">
                       <Camera className="mr-2 h-4 w-4" />
                       Scan
                     </Button>
@@ -77,7 +77,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                       size="icon" 
                       onClick={handleLogout} 
                       title="Logout"
-                      className="text-gray-400 hover:text-white"
+                      className="text-gray-500 hover:text-gray-800"
                     >
                       <LogOut className="h-5 w-5" />
                     </Button>
@@ -86,10 +86,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({
               ) : (
                 <>
                   <Link to="/login">
-                    <Button variant="ghost" className="text-gray-300 border-gray-700 hover:bg-gray-800">Log in</Button>
+                    <Button variant="ghost" className="text-gray-700 border-gray-300 hover:bg-collector-pastel-purple">Log in</Button>
                   </Link>
                   <Link to="/register">
-                    <Button className="bg-collector-purple hover:bg-purple-600">Sign up</Button>
+                    <Button className="bg-collector-purple hover:bg-purple-700">Sign up</Button>
                   </Link>
                 </>
               )}
@@ -101,25 +101,25 @@ const MainLayout: React.FC<MainLayoutProps> = ({
       <main className="flex-1">
         {title && (
           <div className="container max-w-7xl mx-auto px-4 py-6">
-            <h1 className="text-3xl font-bold time-warp-text">{title}</h1>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-collector-purple to-collector-cyan bg-clip-text text-transparent">{title}</h1>
           </div>
         )}
         {children}
       </main>
 
       {showFooter && (
-        <footer className="border-t border-gray-800 py-6 mt-auto bg-gray-900">
+        <footer className="border-t border-gray-200 py-6 mt-auto bg-white">
           <div className="container max-w-7xl mx-auto px-4">
             <div className="flex flex-col md:flex-row justify-between items-center">
               <div className="mb-4 md:mb-0">
                 <Link to="/" className="flex items-center space-x-2">
-                  <Package className="h-6 w-6 text-collector-cyan" />
-                  <span className="text-xl font-bold time-warp-text">
+                  <Package className="h-6 w-6 text-collector-purple" />
+                  <span className="text-xl font-bold bg-gradient-to-r from-collector-purple to-collector-cyan bg-clip-text text-transparent">
                     The Collectors Portal
                   </span>
                 </Link>
               </div>
-              <div className="text-sm text-gray-400">
+              <div className="text-sm text-gray-500">
                 &copy; {new Date().getFullYear()} The Collectors Portal. All rights reserved.
               </div>
             </div>

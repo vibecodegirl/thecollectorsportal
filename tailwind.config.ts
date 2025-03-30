@@ -73,6 +73,16 @@ export default {
 					cyan: "#0EA5E9",
 					magenta: "#D946EF",
 					orange: "#F97316",
+					pastel: {
+						green: "#F2FCE2",
+						yellow: "#FEF7CD",
+						orange: "#FEC6A1",
+						purple: "#E5DEFF",
+						pink: "#FFDEE2",
+						peach: "#FDE1D3",
+						blue: "#D3E4FD",
+						gray: "#F1F0FB",
+					}
 				}
 			},
 			borderRadius: {

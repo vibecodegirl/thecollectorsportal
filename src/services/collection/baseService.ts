@@ -1,70 +1,115 @@
 
-import { CollectionItem } from '@/types/collection';
-import { supabase } from '@/integrations/supabase/client';
-import { 
-  transformDatabaseItemToCollectionItem, 
-  transformCollectionItemToDatabase 
-} from '@/utils/collectionTransformers';
+import { supabaseClient } from "@/integrations/supabase/client";
+import { CollectionItem, CollectionItemCreate, CollectionItemUpdate } from "@/types/collection";
+import { transformCollectionItemFromDatabase, transformCollectionItemToDatabase } from "@/utils/collectionTransformers";
 
-export const fetchCollectionItems = async (userId: string): Promise<CollectionItem[]> => {
-  const { data, error } = await supabase
-    .from('collection_items')
-    .select('*')
-    .eq('user_id', userId);
-  
+/**
+ * Get all collection items for a user
+ */
+export const getCollectionItems = async (userId: string): Promise<CollectionItem[]> => {
+  const { data, error } = await supabaseClient
+    .from("collection_items")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+
   if (error) {
-    throw error;
+    console.error("Error fetching collection items", error);
+    throw new Error(error.message);
   }
-  
-  return data.map(transformDatabaseItemToCollectionItem);
+
+  return data.map(transformCollectionItemFromDatabase);
 };
 
-export const addCollectionItem = async (
-  item: Omit<CollectionItem, 'id' | 'dateAdded' | 'lastUpdated'>, 
+/**
+ * Get a single collection item by ID
+ */
+export const getCollectionItemById = async (
+  itemId: string,
+  userId: string
+): Promise<CollectionItem | null> => {
+  const { data, error } = await supabaseClient
+    .from("collection_items")
+    .select("*")
+    .eq("id", itemId)
+    .eq("user_id", userId)
+    .single();
+
+  if (error) {
+    if (error.code === "PGRST116") {
+      return null; // No data found
+    }
+    console.error("Error fetching collection item", error);
+    throw new Error(error.message);
+  }
+
+  return transformCollectionItemFromDatabase(data);
+};
+
+/**
+ * Create a new collection item
+ */
+export const createCollectionItem = async (
+  item: CollectionItemCreate,
   userId: string
 ): Promise<CollectionItem> => {
-  const supabaseItem = transformCollectionItemToDatabase({...item, userId});
+  const dbItem = transformCollectionItemToDatabase(item, userId);
 
-  const { data, error } = await supabase
-    .from('collection_items')
-    .insert(supabaseItem)
+  const { data, error } = await supabaseClient
+    .from("collection_items")
+    .insert(dbItem)
     .select()
     .single();
 
-  if (error) throw error;
-
-  return transformDatabaseItemToCollectionItem(data);
-};
-
-export const updateCollectionItem = async (
-  item: CollectionItem
-): Promise<CollectionItem> => {
-  const supabaseItem = transformCollectionItemToDatabase(item);
-
-  const { data, error } = await supabase
-    .from('collection_items')
-    .update(supabaseItem)
-    .eq('id', item.id)
-    .select()
-    .single();
-
-  if (error) throw error;
-
-  return transformDatabaseItemToCollectionItem(data);
-};
-
-export const deleteCollectionItem = async (itemId: string): Promise<boolean> => {
-  const { error, count } = await supabase
-    .from('collection_items')
-    .delete()
-    .eq('id', itemId)
-    .select('*', { count: 'exact', head: true });
-
-  if (error) throw error;
-  
-  if (count === 0) {
-    throw new Error("Item not found or already deleted");
+  if (error) {
+    console.error("Error creating collection item", error);
+    throw new Error(error.message);
   }
-  
-  return true;
+
+  return transformCollectionItemFromDatabase(data);
+};
+
+/**
+ * Update an existing collection item
+ */
+export const updateCollectionItem = async (
+  id: string,
+  item: CollectionItemUpdate,
+  userId: string
+): Promise<CollectionItem> => {
+  const dbItem = transformCollectionItemToDatabase({ ...item, id }, userId);
+
+  const { data, error } = await supabaseClient
+    .from("collection_items")
+    .update(dbItem)
+    .eq("id", id)
+    .eq("user_id", userId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error updating collection item", error);
+    throw new Error(error.message);
+  }
+
+  return transformCollectionItemFromDatabase(data);
+};
+
+/**
+ * Delete a collection item
+ */
+export const deleteCollectionItem = async (
+  id: string,
+  userId: string
+): Promise<void> => {
+  const { error } = await supabaseClient
+    .from("collection_items")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", userId);
+
+  if (error) {
+    console.error("Error deleting collection item", error);
+    throw new Error(error.message);
+  }
 };
