@@ -1,10 +1,10 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { 
   Camera, 
   Upload, 
@@ -16,7 +16,9 @@ import {
   ImageIcon,
   Edit,
   UploadCloud,
-  Info
+  Info,
+  Save,
+  CheckCircle
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useCollection, VisionAnalysisResult } from '@/contexts/CollectionContext';
@@ -25,15 +27,18 @@ import { CollectionItem } from '@/types/collection';
 import { useAuth } from '@/contexts/AuthContext';
 import CameraCapture from '@/components/camera/CameraCapture';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { debounce } from 'lodash';
 
 const ScanItem = () => {
   const navigate = useNavigate();
-  const { analyzeItem, analyzeImage, addItem } = useCollection();  // Get addItem from useCollection at the top level
+  const { analyzeItem, analyzeImage, addItem, updateItem } = useCollection();
   const { user } = useAuth();
   
   const [activeStep, setActiveStep] = useState(1);
   const [scanning, setScanning] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [editableItem, setEditableItem] = useState<Partial<CollectionItem> | null>(null);
   const [images, setImages] = useState<string[]>([]);
   const [itemName, setItemName] = useState('');
   const [category, setCategory] = useState('');
@@ -41,35 +46,65 @@ const ScanItem = () => {
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("upload");
   const [imageAnalysis, setImageAnalysis] = useState<VisionAnalysisResult | null>(null);
+  const [temporaryId, setTemporaryId] = useState<string | null>(null);
   
   const [isCameraSupported, setIsCameraSupported] = useState<boolean | null>(null);
   
+  useEffect(() => {
+    if (activeStep === 2 && editableItem && temporaryId) {
+      handleAutoSave();
+    }
+  }, [editableItem]);
+  
+  const handleAutoSave = debounce(async () => {
+    if (!editableItem || !temporaryId || !user) return;
+    
+    try {
+      setAutoSaveStatus('saving');
+      
+      localStorage.setItem(`temp_scan_item_${temporaryId}`, JSON.stringify(editableItem));
+      
+      setAutoSaveStatus('saved');
+      
+      setTimeout(() => {
+        setAutoSaveStatus('idle');
+      }, 2000);
+    } catch (error) {
+      console.error("Auto-save error:", error);
+      setAutoSaveStatus('idle');
+    }
+  }, 1000);
+  
   React.useEffect(() => {
     const checkCameraSupport = async () => {
-      try {
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-          setIsCameraSupported(false);
-          return;
-        }
-        
-        await navigator.mediaDevices.getUserMedia({ video: true })
-          .then(stream => {
-            setIsCameraSupported(true);
-            stream.getTracks().forEach(track => track.stop());
-          })
-          .catch(error => {
-            if (error.name === "NotAllowedError" || error.name === "SecurityError") {
-              setIsCameraSupported(true);
-            } else {
-              setIsCameraSupported(false);
-            }
-          });
-      } catch (err) {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         setIsCameraSupported(false);
+        return;
       }
+      
+      await navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+          setIsCameraSupported(true);
+          stream.getTracks().forEach(track => track.stop());
+        })
+        .catch(error => {
+          if (error.name === "NotAllowedError" || error.name === "SecurityError") {
+            setIsCameraSupported(true);
+          } else {
+            setIsCameraSupported(false);
+          }
+        });
     };
     
     checkCameraSupport();
+    
+    setTemporaryId(`temp_${Date.now()}`);
+    
+    return () => {
+      if (temporaryId) {
+        localStorage.removeItem(`temp_scan_item_${temporaryId}`);
+      }
+    };
   }, []);
   
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -77,7 +112,6 @@ const ScanItem = () => {
     if (!files || files.length === 0) return;
     
     Array.from(files).forEach(file => {
-      // Convert file to base64 string
       const reader = new FileReader();
       reader.onload = (e) => {
         if (e.target?.result) {
@@ -183,6 +217,7 @@ const ScanItem = () => {
       }
       
       setScanResults(scanResult);
+      setEditableItem(scanResult);
       setActiveStep(2);
       
       toast({
@@ -201,21 +236,25 @@ const ScanItem = () => {
   };
   
   const handleAccept = async () => {
-    if (!scanResults || !user) return;
+    if (!editableItem || !user) return;
     
     setSaving(true);
     
     try {
       const itemData: Partial<CollectionItem> = {
-        ...scanResults,
+        ...editableItem,
         userId: user.id,
         images,
-        name: scanResults.name || itemName,
-        category: scanResults.category || category
+        name: editableItem.name || itemName,
+        category: editableItem.category || category,
+        autoSaved: true
       };
       
-      // Use the addItem from useCollection hook that was already initialized at the top of the component
       const newItem = await addItem(itemData as CollectionItem);
+      
+      if (temporaryId) {
+        localStorage.removeItem(`temp_scan_item_${temporaryId}`);
+      }
       
       toast({
         title: "Item added",
@@ -247,6 +286,13 @@ const ScanItem = () => {
     
     sessionStorage.setItem('scanResults', JSON.stringify(itemData));
     navigate('/add-item');
+  };
+  
+  const handleFieldChange = (field: string, value: any) => {
+    if (!editableItem) return;
+    
+    const updatedItem = { ...editableItem, [field]: value };
+    setEditableItem(updatedItem);
   };
   
   const formatCurrency = (amount: number) => {
@@ -432,6 +478,28 @@ const ScanItem = () => {
     );
   };
 
+  const renderEditableField = (label: string, field: keyof CollectionItem, value: any, type: 'text' | 'textarea' = 'text') => {
+    return (
+      <div className="space-y-2 mb-4">
+        <Label htmlFor={field}>{label}</Label>
+        {type === 'textarea' ? (
+          <Textarea
+            id={field}
+            value={value || ''}
+            onChange={(e) => handleFieldChange(field, e.target.value)}
+            className="resize-none h-24"
+          />
+        ) : (
+          <Input
+            id={field}
+            value={value || ''}
+            onChange={(e) => handleFieldChange(field, e.target.value)}
+          />
+        )}
+      </div>
+    );
+  };
+
   return (
     <MainLayout title="Scan Item">
       <div className="container max-w-7xl mx-auto px-4 pb-12">
@@ -597,10 +665,24 @@ const ScanItem = () => {
           </div>
         )}
         
-        {activeStep === 2 && scanResults && (
+        {activeStep === 2 && editableItem && (
           <Card>
-            <CardHeader>
-              <CardTitle>Analysis Results</CardTitle>
+            <CardHeader className="relative">
+              <CardTitle>Edit Analysis Results</CardTitle>
+              <div className="absolute right-6 top-6">
+                {autoSaveStatus === 'saving' && (
+                  <div className="flex items-center text-sm text-gray-500">
+                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                    Auto-saving...
+                  </div>
+                )}
+                {autoSaveStatus === 'saved' && (
+                  <div className="flex items-center text-sm text-green-500">
+                    <CheckCircle className="h-4 w-4 mr-1" />
+                    Changes saved
+                  </div>
+                )}
+              </div>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid md:grid-cols-2 gap-8">
@@ -632,26 +714,24 @@ const ScanItem = () => {
                   )}
                   
                   <div className="space-y-4">
-                    <div>
-                      <h3 className="text-lg font-semibold">{scanResults.name || itemName}</h3>
-                      <p className="text-gray-500">{scanResults.category || category}</p>
-                    </div>
+                    {renderEditableField('Item Name', 'name', editableItem.name)}
+                    {renderEditableField('Category', 'category', editableItem.category)}
                     
                     <div className="flex justify-between">
                       <div>
-                        <p className="text-sm text-gray-500">Estimated Value</p>
-                        <p className="text-xl font-bold">
-                          {formatCurrency(scanResults.priceEstimate?.marketValue || 0)}
-                        </p>
+                        <p className="text-sm text-gray-500 mb-1">Estimated Value</p>
+                        {renderEditableField('Market Value', 'priceEstimate', 
+                          editableItem.priceEstimate ? formatCurrency(editableItem.priceEstimate.marketValue || 0).replace('$', '') : '0'
+                        )}
                       </div>
                       
                       <div>
                         <p className="text-sm text-gray-500">Confidence</p>
                         <div className={`text-sm px-2 py-1 rounded-full font-medium 
-                          ${scanResults.confidenceScore?.level === 'high' ? 'confidence-high' : 
-                            scanResults.confidenceScore?.level === 'medium' ? 'confidence-medium' : 
+                          ${editableItem.confidenceScore?.level === 'high' ? 'confidence-high' : 
+                            editableItem.confidenceScore?.level === 'medium' ? 'confidence-medium' : 
                             'confidence-low'}`}>
-                          {scanResults.confidenceScore?.score || 0}% ({scanResults.confidenceScore?.level || 'low'})
+                          {editableItem.confidenceScore?.score || 0}% ({editableItem.confidenceScore?.level || 'low'})
                         </div>
                       </div>
                     </div>
@@ -660,40 +740,36 @@ const ScanItem = () => {
                 
                 <div className="space-y-4">
                   <div>
-                    <h3 className="font-medium mb-1">Identification</h3>
-                    <div className="bg-gray-50 p-3 rounded">
-                      <p><strong>Type:</strong> {scanResults.type}</p>
-                      <p><strong>Manufacturer:</strong> {scanResults.manufacturer}</p>
-                      <p><strong>Year:</strong> {scanResults.yearProduced}</p>
-                      <p><strong>Edition:</strong> {scanResults.edition}</p>
+                    <h3 className="font-medium mb-3">Identification</h3>
+                    <div className="space-y-4">
+                      {renderEditableField('Type', 'type', editableItem.type)}
+                      {renderEditableField('Manufacturer', 'manufacturer', editableItem.manufacturer)}
+                      {renderEditableField('Year', 'yearProduced', editableItem.yearProduced)}
+                      {renderEditableField('Edition', 'edition', editableItem.edition)}
                     </div>
                   </div>
                   
                   <div>
-                    <h3 className="font-medium mb-1">Condition</h3>
-                    <div className="bg-gray-50 p-3 rounded">
-                      <p><strong>Overall:</strong> {scanResults.condition}</p>
-                      <p><strong>Flaws:</strong> {scanResults.flaws}</p>
-                      <p><strong>Completeness:</strong> {scanResults.completeness}</p>
+                    <h3 className="font-medium mb-3">Condition</h3>
+                    <div className="space-y-4">
+                      {renderEditableField('Overall Condition', 'condition', editableItem.condition)}
+                      {renderEditableField('Flaws', 'flaws', editableItem.flaws)}
+                      {renderEditableField('Completeness', 'completeness', editableItem.completeness)}
                     </div>
                   </div>
                   
                   <div>
-                    <h3 className="font-medium mb-1">Physical Attributes</h3>
-                    <div className="bg-gray-50 p-3 rounded">
-                      <p><strong>Dimensions:</strong> {scanResults.dimensions}</p>
-                      <p><strong>Weight:</strong> {scanResults.weight}</p>
+                    <h3 className="font-medium mb-3">Physical Attributes</h3>
+                    <div className="space-y-4">
+                      {renderEditableField('Dimensions', 'dimensions', editableItem.dimensions)}
+                      {renderEditableField('Weight', 'weight', editableItem.weight)}
                     </div>
                   </div>
                   
-                  {scanResults.notes && (
-                    <div>
-                      <h3 className="font-medium mb-1">Additional Notes</h3>
-                      <div className="bg-gray-50 p-3 rounded">
-                        <p>{scanResults.notes}</p>
-                      </div>
-                    </div>
-                  )}
+                  <div>
+                    <h3 className="font-medium mb-3">Additional Notes</h3>
+                    {renderEditableField('Notes', 'notes', editableItem.notes, 'textarea')}
+                  </div>
                 </div>
               </div>
               
@@ -712,7 +788,7 @@ const ScanItem = () => {
                     onClick={handleEdit}
                   >
                     <Edit className="mr-2 h-4 w-4" />
-                    Edit Before Saving
+                    Use Advanced Editor
                   </Button>
                   
                   <Button
@@ -726,7 +802,7 @@ const ScanItem = () => {
                       </>
                     ) : (
                       <>
-                        Accept Results
+                        Save to Collection
                         <ArrowRight className="ml-2 h-4 w-4" />
                       </>
                     )}

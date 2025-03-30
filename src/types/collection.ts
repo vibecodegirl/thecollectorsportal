@@ -1,4 +1,3 @@
-
 export type ItemStatus = 'active' | 'archived' | 'sold';
 
 export interface PriceEstimate {
@@ -73,6 +72,7 @@ export interface CollectionItem {
   confidenceScore?: ConfidenceScore;
   saleInfo?: SaleInfo;
   primaryObject?: PrimaryObject;
+  autoSaved?: boolean; // Added autoSaved property
 }
 
 export interface User {
