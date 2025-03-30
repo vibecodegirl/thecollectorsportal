@@ -62,6 +62,8 @@ export const transformDatabaseItemToCollectionItem = (
 
 /**
  * Transforms a CollectionItem into a database item for storage
+ * @param item The collection item to transform
+ * @param userId Optional user ID to include (useful when creating new items)
  */
 export const transformCollectionItemToDatabase = (item: Partial<CollectionItem>, userId?: string) => {
   return {
