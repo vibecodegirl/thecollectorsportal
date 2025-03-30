@@ -39,7 +39,7 @@ export const transformDatabaseItemToCollectionItem = (
       high: item.estimated_value ? item.estimated_value * 1.2 : 0,
       marketValue: item.estimated_value || 0
     },
-    confidenceScore: calculateConfidenceScore(item),
+    confidenceScore: item.confidence_score ? item.confidence_score as ConfidenceScore : calculateConfidenceScore(item),
     primaryObject: {
       shape: 'Unknown',
       colors: {
@@ -97,7 +97,6 @@ export const transformCollectionItemToDatabase = (item: Partial<CollectionItem>,
   const {
     autoSaved,
     primaryObject,
-    confidenceScore,
     priceEstimate,
     saleInfo,
     videos,
@@ -131,6 +130,7 @@ export const transformCollectionItemToDatabase = (item: Partial<CollectionItem>,
     documentation: rest.documentation,
     dimensions: rest.dimensions,
     weight: rest.weight,
-    rarity: rest.rarity
+    rarity: rest.rarity,
+    confidence_score: rest.confidenceScore // Now we can store the confidence score
   };
 };

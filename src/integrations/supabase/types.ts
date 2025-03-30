@@ -16,6 +16,7 @@ export type Database = {
           category: string | null
           completeness: string | null
           condition: string | null
+          confidence_score: Json | null
           created_at: string
           description: string | null
           dimensions: string | null
@@ -43,6 +44,7 @@ export type Database = {
           category?: string | null
           completeness?: string | null
           condition?: string | null
+          confidence_score?: Json | null
           created_at?: string
           description?: string | null
           dimensions?: string | null
@@ -70,6 +72,7 @@ export type Database = {
           category?: string | null
           completeness?: string | null
           condition?: string | null
+          confidence_score?: Json | null
           created_at?: string
           description?: string | null
           dimensions?: string | null
