@@ -40,7 +40,7 @@ export const addCollectionItem = async (
 export const updateCollectionItem = async (
   item: CollectionItem
 ): Promise<CollectionItem> => {
-  // Fix: The transformCollectionItemToDatabase function only needs item as argument
+  // Fix: Only pass the item to transformCollectionItemToDatabase
   const supabaseItem = transformCollectionItemToDatabase(item);
 
   const { data, error } = await supabase
