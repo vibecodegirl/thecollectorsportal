@@ -20,6 +20,7 @@ export interface SaleInfo {
   salePlatform?: string;
   saleFees?: number;
   saleNotes?: string;
+  buyer?: string; // Added buyer property
   buyerInfo?: string;
 }
 
@@ -36,6 +37,7 @@ export interface PrimaryObject {
   timePeriod: string;
   function: string;
   possibleFunctions?: string[];
+  condition?: string; // Added condition property
 }
 
 export interface CollectionItem {
@@ -63,6 +65,7 @@ export interface CollectionItem {
   rarity?: string;
   notes?: string;
   images?: string[];
+  videos?: string[]; // Added videos property
   status: ItemStatus;
   dateAdded: string;
   lastUpdated: string;
@@ -77,4 +80,5 @@ export interface User {
   email?: string;
   name?: string;
   avatar_url?: string;
+  collections?: CollectionItem[]; // Added collections property
 }

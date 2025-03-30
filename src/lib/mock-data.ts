@@ -62,7 +62,7 @@ const mockCollections: CollectionItem[] = [
       shape: "Round/Circular",
       colors: {
         dominant: "Copper/Bronze",
-        accents: "Brown toning"
+        accents: ["Brown toning"]
       },
       texture: "Smooth with fine details",
       material: "Copper",
