@@ -9,7 +9,7 @@ import {
   deleteCollectionItem,
   analyzeCollectionItem,
   analyzeImageWithVision
-} from '@/services/collectionService';
+} from '@/services/collection';
 
 interface CollectionContextType {
   collections: CollectionItem[];
