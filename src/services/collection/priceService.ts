@@ -30,6 +30,7 @@ export const searchItemPrices = async (query: string): Promise<SearchResult> => 
       body: { query: enhancedQuery }
     });
 
+    // Handle function error responses
     if (response.error) {
       console.error("Supabase function error:", response.error);
       throw new Error(`Error calling search-prices: ${response.error.message}`);
@@ -39,6 +40,16 @@ export const searchItemPrices = async (query: string): Promise<SearchResult> => 
     if (!data) {
       console.log("No data returned from search-prices function");
       return { items: [] };
+    }
+    
+    // Check if the response contains an error message (API returned 200 but with error details)
+    if (data.error) {
+      console.error("Search API error:", data.error, data.details || '');
+      return { 
+        items: data.items || [],
+        priceRanges: data.priceRanges,
+        marketplace: data.marketplace
+      };
     }
     
     console.log("Search results:", data);
