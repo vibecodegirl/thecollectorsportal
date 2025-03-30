@@ -93,28 +93,31 @@ export const transformCollectionItemToDatabase = (item: Partial<CollectionItem>,
   // Calculate the estimated value as the market value from price estimates if available
   const estimatedValue = item.priceEstimate?.marketValue || 0;
   
+  // Remove autoSaved property if it exists to prevent database errors
+  const { autoSaved, ...cleanedItem } = item as any;
+  
   return {
-    user_id: userId || item.userId,
-    name: item.name || '',
-    description: item.notes,
-    category: item.category,
-    condition: item.condition,
+    user_id: userId || cleanedItem.userId,
+    name: cleanedItem.name || '',
+    description: cleanedItem.notes,
+    category: cleanedItem.category,
+    condition: cleanedItem.condition,
     estimated_value: estimatedValue,
-    image_url: item.images && item.images.length > 0 ? item.images[0] : null,
+    image_url: cleanedItem.images && cleanedItem.images.length > 0 ? cleanedItem.images[0] : null,
     acquisition_date: null,
-    type: item.type,
-    manufacturer: item.manufacturer,
-    year_produced: item.yearProduced,
-    edition: item.edition,
-    model_number: item.modelNumber,
-    unique_identifiers: item.uniqueIdentifiers,
-    flaws: item.flaws,
-    completeness: item.completeness,
-    acquisition_source: item.acquisitionSource,
-    previous_owners: item.previousOwners,
-    documentation: item.documentation,
-    dimensions: item.dimensions,
-    weight: item.weight,
-    rarity: item.rarity
+    type: cleanedItem.type,
+    manufacturer: cleanedItem.manufacturer,
+    year_produced: cleanedItem.yearProduced,
+    edition: cleanedItem.edition,
+    model_number: cleanedItem.modelNumber,
+    unique_identifiers: cleanedItem.uniqueIdentifiers,
+    flaws: cleanedItem.flaws,
+    completeness: cleanedItem.completeness,
+    acquisition_source: cleanedItem.acquisitionSource,
+    previous_owners: cleanedItem.previousOwners,
+    documentation: cleanedItem.documentation,
+    dimensions: cleanedItem.dimensions,
+    weight: cleanedItem.weight,
+    rarity: cleanedItem.rarity
   };
 };

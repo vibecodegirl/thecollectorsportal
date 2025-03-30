@@ -246,8 +246,7 @@ const ScanItem = () => {
         userId: user.id,
         images,
         name: editableItem.name || itemName,
-        category: editableItem.category || category,
-        autoSaved: true
+        category: editableItem.category || category
       };
       
       const newItem = await addItem(itemData as CollectionItem);
@@ -261,8 +260,9 @@ const ScanItem = () => {
         description: `${newItem.name} has been added to your collection`,
       });
       
-      navigate(`/collection/${newItem.id}`);
+      navigate(`/collection`);
     } catch (error) {
+      console.error("Error saving item:", error);
       toast({
         title: "Error saving item",
         description: "There was an error adding the item to your collection",

@@ -53,7 +53,11 @@ export const createCollectionItem = async (
   item: Partial<CollectionItem>,
   userId: string
 ): Promise<CollectionItem> => {
+  // Transform the item for the database, which will strip any properties not in the schema
   const dbItem = transformCollectionItemToDatabase(item, userId);
+
+  // Log what we're sending to the database for debugging
+  console.log("Creating collection item with data:", dbItem);
 
   const { data, error } = await supabase
     .from("collection_items")
@@ -77,7 +81,11 @@ export const updateCollectionItem = async (
   item: Partial<CollectionItem>,
   userId: string
 ): Promise<CollectionItem> => {
+  // Transform the item for the database, which will strip any properties not in the schema
   const dbItem = transformCollectionItemToDatabase({ ...item, id }, userId);
+
+  // Log what we're sending to the database for debugging
+  console.log("Updating collection item with data:", dbItem);
 
   const { data, error } = await supabase
     .from("collection_items")
