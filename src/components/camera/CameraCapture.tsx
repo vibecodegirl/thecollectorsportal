@@ -1,17 +1,14 @@
 
 import React, { useRef, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Camera, SwitchCamera, Ban, Loader2, Search } from 'lucide-react';
-import { searchByImage } from '@/services/collection/priceService';
-import { toast } from '@/components/ui/use-toast';
+import { Camera, SwitchCamera, Ban, Loader2 } from 'lucide-react';
 
 interface CameraCaptureProps {
-  onCapture: (imageSrc: string, analysisResult?: any) => void;
+  onCapture: (imageSrc: string) => void;
   onClose: () => void;
-  analyzeImage?: boolean;
 }
 
-const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose, analyzeImage = false }) => {
+const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
@@ -19,7 +16,6 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose, analy
   const [hasMultipleCameras, setHasMultipleCameras] = useState(false);
   const [permissionDenied, setPermissionDenied] = useState(false);
   const [capturing, setCapturing] = useState(false);
-  const [analyzing, setAnalyzing] = useState(false);
 
   useEffect(() => {
     // Check if device has multiple cameras
@@ -73,7 +69,7 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose, analy
     }
   };
 
-  const captureImage = async () => {
+  const captureImage = () => {
     if (videoRef.current && canvasRef.current) {
       setCapturing(true);
       
@@ -91,45 +87,10 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose, analy
         
         // Convert canvas to data URL
         const imageSrc = canvas.toDataURL('image/jpeg');
-
-        if (analyzeImage) {
-          setAnalyzing(true);
-          try {
-            // Extract base64 data without the prefix
-            const base64Data = imageSrc.split(',')[1];
-            const analysisResult = await searchByImage(base64Data);
-            
-            if (analysisResult.error) {
-              toast({
-                variant: "destructive",
-                title: "Analysis failed",
-                description: analysisResult.error,
-              });
-              onCapture(imageSrc);
-            } else {
-              toast({
-                title: "Image analyzed",
-                description: analysisResult.title || "Object identified successfully",
-              });
-              onCapture(imageSrc, analysisResult);
-            }
-          } catch (error) {
-            console.error("Error analyzing image:", error);
-            toast({
-              variant: "destructive",
-              title: "Analysis failed",
-              description: "Could not analyze image. Please try again.",
-            });
-            onCapture(imageSrc);
-          } finally {
-            setAnalyzing(false);
-            setCapturing(false);
-          }
-        } else {
-          // Simply return the captured image without analyzing
-          onCapture(imageSrc);
-          setCapturing(false);
-        }
+        
+        // Simply return the captured image without analyzing
+        onCapture(imageSrc);
+        setCapturing(false);
       }
     }
   };
@@ -185,13 +146,8 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose, analy
             </Button>
           )}
           
-          <Button onClick={captureImage} className="bg-collector-navy" disabled={capturing || analyzing}>
-            {analyzing ? (
-              <>
-                <Search className="h-5 w-5 mr-2 animate-spin" />
-                Analyzing...
-              </>
-            ) : capturing ? (
+          <Button onClick={captureImage} className="bg-collector-navy" disabled={capturing}>
+            {capturing ? (
               <>
                 <Loader2 className="h-5 w-5 mr-2 animate-spin" />
                 Capturing...
@@ -199,7 +155,7 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose, analy
             ) : (
               <>
                 <Camera className="h-5 w-5 mr-2" />
-                {analyzeImage ? "Capture & Analyze" : "Capture"}
+                Capture
               </>
             )}
           </Button>
