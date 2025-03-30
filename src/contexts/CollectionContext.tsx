@@ -136,6 +136,7 @@ export const CollectionProvider = ({ children }: { children: ReactNode }) => {
       
       return newItem;
     } catch (error: any) {
+      console.error('Error in addItem:', error);
       toast({
         title: "Error adding item",
         description: error.message || "Failed to add new item to your collection",
@@ -162,6 +163,7 @@ export const CollectionProvider = ({ children }: { children: ReactNode }) => {
       
       return updatedItem;
     } catch (error: any) {
+      console.error('Error in updateItem:', error);
       toast({
         title: "Error updating item",
         description: error.message || "Failed to update the item",

@@ -13,6 +13,7 @@ import { Camera, ArrowLeft, Loader2, Trash, Check, Upload } from 'lucide-react';
 import { AIAnalysisRequest } from '@/lib/mock-data';
 import { toast } from '@/components/ui/use-toast';
 import { CollectionItem, ConfidenceScore, PriceEstimate } from '@/types/collection';
+import { navigateToGallery } from '@/utils/navigationUtils';
 
 const AddEditItem = () => {
   const { id } = useParams<{ id: string }>();
@@ -217,30 +218,41 @@ const AddEditItem = () => {
         return;
       }
       
+      // Make sure we have the required fields
+      if (!formData.name || !formData.category) {
+        toast({
+          title: "Missing required fields",
+          description: "Name and category are required",
+          variant: "destructive",
+        });
+        setIsSaving(false);
+        return;
+      }
+      
       const itemData = {
         ...formData,
         userId: user.id
       } as CollectionItem;
       
       if (isEditing && id) {
-        await updateItem(itemData as CollectionItem);
-        toast({
-          title: "Item updated",
-          description: `${itemData.name} has been updated in your collection`,
+        const updatedItem = await updateItem(itemData as CollectionItem);
+        // Use navigation utility to go back to gallery or item details
+        navigateToGallery(navigate, {
+          message: `${updatedItem.name} has been updated in your collection`,
+          itemId: updatedItem.id
         });
       } else {
         const newItem = await addItem(itemData);
-        toast({
-          title: "Item added",
-          description: `${newItem.name} has been added to your collection`,
+        // Use navigation utility to go to gallery
+        navigateToGallery(navigate, {
+          message: `${newItem.name} has been added to your collection`,
         });
       }
-      
-      navigate('/collection');
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Error saving item:", error);
       toast({
         title: "Error saving item",
-        description: "There was an error saving your item",
+        description: error.message || "There was an error saving your item",
         variant: "destructive",
       });
     } finally {
