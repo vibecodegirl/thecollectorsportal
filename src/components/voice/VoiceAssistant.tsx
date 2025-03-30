@@ -4,18 +4,22 @@ import { useConversation } from '@11labs/react';
 import { MessageCircle, Mic, X } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
-// Define the correct types based on the ElevenLabs API
-type Role = 'user' | 'agent';
+// Define types for the ElevenLabs API message structure
+interface ElevenLabsMessage {
+  message: string;
+  source: 'user' | 'agent';
+}
 
 const VoiceAssistant = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Array<{ content: string; sender: 'user' | 'assistant' }>>([]);
   const [isListening, setIsListening] = useState(false);
+  const { toast } = useToast();
   
   const conversation = useConversation({
-    onMessage: (message) => {
-      // Use type assertion to handle the message source correctly
+    onMessage: (message: ElevenLabsMessage) => {
       if (message.source === 'agent') {
         setMessages(prev => [...prev, { content: message.message, sender: 'assistant' }]);
       } else if (message.source === 'user') {
@@ -24,6 +28,10 @@ const VoiceAssistant = () => {
     },
     onConnect: () => {
       console.log('Connected to ElevenLabs voice assistant');
+      toast({
+        title: "Voice Assistant Connected",
+        description: "You can now have a conversation with the assistant.",
+      });
     },
     onDisconnect: () => {
       setIsListening(false);
@@ -31,6 +39,12 @@ const VoiceAssistant = () => {
     },
     onError: (error) => {
       console.error('ElevenLabs error:', error);
+      toast({
+        title: "Voice Assistant Error",
+        description: "There was an issue connecting to the voice assistant. Please try again.",
+        variant: "destructive",
+      });
+      setIsListening(false);
     }
   });
 
@@ -43,6 +57,11 @@ const VoiceAssistant = () => {
     } catch (error) {
       console.error('Failed to start conversation:', error);
       setIsListening(false);
+      toast({
+        title: "Connection Failed",
+        description: "Could not connect to the voice assistant. Please check your microphone permissions and try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -52,6 +71,11 @@ const VoiceAssistant = () => {
       setIsListening(false);
     } catch (error) {
       console.error('Failed to end conversation:', error);
+      toast({
+        title: "Disconnection Error",
+        description: "There was an issue ending the conversation. The connection will be reset.",
+        variant: "destructive",
+      });
     }
   };
 
