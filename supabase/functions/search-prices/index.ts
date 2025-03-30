@@ -122,7 +122,6 @@ serve(async (req) => {
 // Function to extract price ranges from search results
 function extractPriceRanges(data) {
   const prices = [];
-  const sources = [];
   
   if (!data.items || !Array.isArray(data.items)) {
     return { low: null, average: null, high: null, count: 0 };
@@ -133,23 +132,13 @@ function extractPriceRanges(data) {
     // Try to extract from snippet
     if (item.snippet) {
       const snippetPrices = extractPricesFromText(item.snippet);
-      if (snippetPrices.length > 0) {
-        snippetPrices.forEach(price => {
-          prices.push(price);
-          sources.push(item.displayLink || 'snippet');
-        });
-      }
+      prices.push(...snippetPrices);
     }
     
     // Try to extract from title
     if (item.title) {
       const titlePrices = extractPricesFromText(item.title);
-      if (titlePrices.length > 0) {
-        titlePrices.forEach(price => {
-          prices.push(price);
-          sources.push(item.displayLink || 'title');
-        });
-      }
+      prices.push(...titlePrices);
     }
     
     // Try to extract from metatags if available
@@ -159,7 +148,6 @@ function extractPriceRanges(data) {
           const price = parseFloat(metatag["og:price:amount"]);
           if (!isNaN(price) && price > 0) {
             prices.push(price);
-            sources.push(item.displayLink || 'metatag');
           }
         }
       });
@@ -172,7 +160,6 @@ function extractPriceRanges(data) {
           const price = parseFloat(offer.price.replace(/[^0-9.]/g, ''));
           if (!isNaN(price) && price > 0) {
             prices.push(price);
-            sources.push(item.displayLink || 'offer');
           }
         }
       });
@@ -185,7 +172,6 @@ function extractPriceRanges(data) {
           const price = parseFloat(product.price.replace(/[^0-9.]/g, ''));
           if (!isNaN(price) && price > 0) {
             prices.push(price);
-            sources.push(item.displayLink || 'product');
           }
         }
       });
@@ -193,17 +179,9 @@ function extractPriceRanges(data) {
   });
   
   // Filter out any invalid prices and sort
-  const validPrices = [];
-  const validSources = [];
-  
-  prices.forEach((price, index) => {
-    if (!isNaN(price) && price > 0 && price < 100000) { // Add upper limit to filter out anomalies
-      validPrices.push(price);
-      validSources.push(sources[index]);
-    }
-  });
-  
-  validPrices.sort((a, b) => a - b);
+  const validPrices = prices
+    .filter(price => !isNaN(price) && price > 0 && price < 100000) // Add upper limit to filter out anomalies
+    .sort((a, b) => a - b);
   
   if (validPrices.length === 0) {
     return { low: null, average: null, high: null, count: 0 };
@@ -223,40 +201,12 @@ function extractPriceRanges(data) {
   const sum = validPrices.reduce((total, price) => total + price, 0);
   const average = sum / validPrices.length;
   
-  // Calculate weighted average based on source reliability
-  const reputableDomains = [
-    'ebay.com', 'amazon.com', 'sothebys.com', 'christies.com', 'ha.com', 
-    'heritage.com', 'bonhams.com', 'rubylane.com', 'worthpoint.com'
-  ];
-  
-  // Calculate a weighted average giving more importance to reputable sources
-  let weightedSum = 0;
-  let totalWeight = 0;
-  
-  validPrices.forEach((price, index) => {
-    const source = validSources[index];
-    let weight = 1; // Default weight
-    
-    // Give higher weight to reputable sources
-    if (source && reputableDomains.some(domain => source.includes(domain))) {
-      weight = 2;
-    }
-    
-    weightedSum += price * weight;
-    totalWeight += weight;
-  });
-  
-  const weightedAverage = totalWeight > 0 ? weightedSum / totalWeight : average;
-  
-  // Use the weighted average for market value
   return {
     low,
     average,
     high,
-    marketValue: weightedAverage,
     count: validPrices.length,
-    all: validPrices,
-    sources: validSources
+    all: validPrices
   };
 }
 

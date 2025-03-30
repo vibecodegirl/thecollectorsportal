@@ -1,6 +1,5 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { ConfidenceScore } from '@/types/collection';
 
 interface PriceRange {
   low: number | null;
@@ -8,9 +7,6 @@ interface PriceRange {
   high: number | null;
   count: number;
   all?: number[];
-  sources?: string[];
-  condition?: string;
-  confidenceScore?: ConfidenceScore;
 }
 
 interface SearchResult {
@@ -21,6 +17,22 @@ interface SearchResult {
     url: string;
     count: number;
   }[];
+  error?: string;
+  details?: string;
+}
+
+interface ImageSearchResult {
+  title?: string;
+  category?: string;
+  type?: string;
+  description?: string;
+  matches?: {
+    title: string;
+    link: string;
+    description?: string;
+    imageUrl?: string;
+  }[];
+  error?: string;
 }
 
 export const searchItemPrices = async (query: string): Promise<SearchResult> => {
@@ -34,6 +46,7 @@ export const searchItemPrices = async (query: string): Promise<SearchResult> => 
       body: { query: enhancedQuery }
     });
 
+    // Handle function error responses
     if (response.error) {
       console.error("Supabase function error:", response.error);
       throw new Error(`Error calling search-prices: ${response.error.message}`);
@@ -43,6 +56,18 @@ export const searchItemPrices = async (query: string): Promise<SearchResult> => 
     if (!data) {
       console.log("No data returned from search-prices function");
       return { items: [] };
+    }
+    
+    // Check if the response contains an error message (API returned 200 but with error details)
+    if (data.error) {
+      console.error("Search API error:", data.error, data.details || '');
+      return { 
+        items: data.items || [],
+        priceRanges: data.priceRanges,
+        marketplace: data.marketplace,
+        error: data.error,
+        details: data.details
+      };
     }
     
     console.log("Search results:", data);
@@ -55,11 +80,6 @@ export const searchItemPrices = async (query: string): Promise<SearchResult> => 
         })).filter((item: any) => item.price)
       : [];
     
-    // If we have price ranges, calculate confidence score
-    if (data.priceRanges) {
-      data.priceRanges.confidenceScore = calculatePriceConfidence(data.priceRanges, data.marketplace);
-    }
-    
     return {
       items,
       priceRanges: data.priceRanges,
@@ -67,79 +87,62 @@ export const searchItemPrices = async (query: string): Promise<SearchResult> => 
     };
   } catch (error) {
     console.error("Error searching for item prices:", error);
-    return { items: [] };
+    return { 
+      items: [],
+      error: error instanceof Error ? error.message : "Unknown error occurred"
+    };
   }
 };
 
-/**
- * Calculate a confidence score for the price estimate based on available data
- */
-const calculatePriceConfidence = (
-  priceRanges: PriceRange, 
-  marketplace?: { name: string; url: string; count: number }[]
-): ConfidenceScore => {
-  let score = 30; // Base score - start low
-  
-  // Add points based on number of price points found
-  if (priceRanges.count > 0) {
-    // More price points = higher confidence, up to 30 additional points
-    score += Math.min(priceRanges.count * 3, 30);
+// New function for Google image search to help identify items
+export const searchByImage = async (imageBase64: string): Promise<ImageSearchResult> => {
+  try {
+    console.log("Searching for items using image analysis");
     
-    // Check price consistency (lower standard deviation = higher confidence)
-    if (priceRanges.all && priceRanges.all.length > 1) {
-      const std = calculateStandardDeviation(priceRanges.all);
-      const mean = priceRanges.average || 0;
-      
-      // If prices are consistent (CV < 0.3), add up to 20 points
-      if (mean > 0) {
-        const cv = std / mean; // Coefficient of variation
-        if (cv < 0.1) score += 20;
-        else if (cv < 0.2) score += 15;
-        else if (cv < 0.3) score += 10;
-        else if (cv < 0.5) score += 5;
-      }
+    const response = await supabase.functions.invoke('search-by-image', {
+      body: { image: imageBase64 }
+    });
+
+    // Handle function error responses
+    if (response.error) {
+      console.error("Supabase function error:", response.error);
+      throw new Error(`Error calling search-by-image: ${response.error.message}`);
     }
-  }
-  
-  // Add points for marketplace diversity (more marketplaces = higher confidence)
-  if (marketplace && marketplace.length > 0) {
-    score += Math.min(marketplace.length * 5, 20);
     
-    // Give bonus points for reputable marketplaces
-    const reputableSites = ['ebay.com', 'amazon.com', 'sothebys.com', 'christies.com', 'heritage.com'];
-    const hasReputableSite = marketplace.some(m => 
-      reputableSites.some(site => m.url.includes(site))
-    );
+    const data = response.data;
+    if (!data) {
+      console.log("No data returned from search-by-image function");
+      return { matches: [] };
+    }
     
-    if (hasReputableSite) score += 10;
+    // Check if the response contains an error message
+    if (data.error) {
+      console.error("Image search API error:", data.error);
+      return { 
+        matches: data.matches || [],
+        error: data.error
+      };
+    }
+    
+    console.log("Image search results:", data);
+    
+    return {
+      title: data.title,
+      category: data.category,
+      type: data.type,
+      description: data.description,
+      matches: data.matches || []
+    };
+  } catch (error) {
+    console.error("Error searching with image:", error);
+    return { 
+      matches: [],
+      error: error instanceof Error ? error.message : "Unknown error occurred"
+    };
   }
-  
-  // Cap score at 100
-  score = Math.min(Math.max(score, 10), 100);
-  
-  // Determine level based on score
-  let level: 'low' | 'medium' | 'high';
-  if (score < 40) level = 'low';
-  else if (score < 70) level = 'medium';
-  else level = 'high';
-  
-  return { score, level };
 };
 
-/**
- * Calculate standard deviation for an array of numbers
- */
-const calculateStandardDeviation = (values: number[]): number => {
-  const avg = values.reduce((sum, val) => sum + val, 0) / values.length;
-  const squareDiffs = values.map(value => {
-    const diff = value - avg;
-    return diff * diff;
-  });
-  const avgSquareDiff = squareDiffs.reduce((sum, val) => sum + val, 0) / squareDiffs.length;
-  return Math.sqrt(avgSquareDiff);
-};
-
-// Function to enrich a search query with specific terms for better price results
+// New function to enrich a search query with specific terms for better price results
 const enhanceSearchQuery = (query: string): string => {
   const baseQuery = query.trim();
   
@@ -183,9 +186,7 @@ const extractPriceFromSnippet = (snippet?: string): string | undefined => {
   return priceMatch ? priceMatch[0].trim() : undefined;
 };
 
-/**
- * Get estimated price ranges for an item using its details
- */
+// Get estimated price ranges for an item using its details
 export const getItemPriceEstimate = async (item: {
   name?: string;
   category?: string;
@@ -227,65 +228,5 @@ export const getItemPriceEstimate = async (item: {
   } catch (error) {
     console.error("Error estimating item price:", error);
     return null;
-  }
-};
-
-/**
- * Search for items by image using the search-prices edge function
- */
-export const searchByImage = async (
-  imageUrl: string, 
-  additionalTerms?: string
-): Promise<SearchResult> => {
-  try {
-    console.log("Searching by image:", imageUrl);
-    
-    // First analyze the image with Vision API to get description
-    const visionAnalysis = await analyzeImageForSearch(imageUrl);
-    
-    if (!visionAnalysis || !visionAnalysis.description) {
-      console.error("No vision analysis results");
-      return { items: [] };
-    }
-    
-    // Build search query from vision analysis
-    let searchQuery = visionAnalysis.description;
-    
-    // Add additional terms if provided
-    if (additionalTerms) {
-      searchQuery += " " + additionalTerms;
-    }
-    
-    // Search using the generated query
-    const searchResults = await searchItemPrices(searchQuery);
-    
-    // Enhance results with the vision analysis
-    return {
-      ...searchResults,
-      visionAnalysis,
-    };
-  } catch (error) {
-    console.error("Error in image search:", error);
-    return { items: [] };
-  }
-};
-
-/**
- * Analyze an image to extract searchable text and objects
- */
-const analyzeImageForSearch = async (imageUrl: string) => {
-  try {
-    const response = await supabase.functions.invoke('analyze-with-vision', {
-      body: { 
-        images: [imageUrl],
-        mode: 'search'
-      }
-    });
-    
-    if (response.error) throw response.error;
-    return response.data;
-  } catch (error) {
-    console.error("Vision API analysis error:", error);
-    throw error;
   }
 };

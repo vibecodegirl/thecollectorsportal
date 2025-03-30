@@ -47,7 +47,6 @@ const CollectionItemCard: React.FC<CollectionItemCardProps> = ({ item }) => {
             priceEstimate={item.priceEstimate} 
             itemName={item.name}
             itemCategory={item.category}
-            confidenceScore={item.confidenceScore}
           />
         </div>
       </CardContent>

@@ -15,14 +15,13 @@ import {
   SheetFooter,
 } from "@/components/ui/sheet";
 import { Badge } from '@/components/ui/badge';
-import ConfidenceBadge from './ConfidenceBadge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface PriceEstimateDisplayProps {
   priceEstimate: PriceEstimate;
   showDetails?: boolean;
   itemName?: string;
   itemCategory?: string;
-  confidenceScore?: { score: number; level: 'low' | 'medium' | 'high' };
 }
 
 const formatCurrency = (amount: number) => {
@@ -38,19 +37,13 @@ const PriceEstimateDisplay: React.FC<PriceEstimateDisplayProps> = ({
   priceEstimate, 
   showDetails = false,
   itemName = '',
-  itemCategory = '',
-  confidenceScore
+  itemCategory = ''
 }) => {
   const [searchResults, setSearchResults] = useState<Array<{ title: string; link: string; price?: string }>>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [priceRanges, setPriceRanges] = useState<{ 
-    low: number | null; 
-    average: number | null; 
-    high: number | null; 
-    count: number;
-    confidenceScore?: { score: number; level: 'low' | 'medium' | 'high' };
-  } | null>(null);
+  const [priceRanges, setPriceRanges] = useState<{ low: number | null; average: number | null; high: number | null; count: number } | null>(null);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const { toast } = useToast();
 
   const handlePriceSearch = async () => {
@@ -64,6 +57,8 @@ const PriceEstimateDisplay: React.FC<PriceEstimateDisplayProps> = ({
     }
 
     setIsLoading(true);
+    setSearchError(null);
+    
     try {
       // Create a search query using item name and category
       const searchQuery = itemCategory 
@@ -80,7 +75,16 @@ const PriceEstimateDisplay: React.FC<PriceEstimateDisplayProps> = ({
         setSearchResults(result.items);
       }
       
-      if (!result.items || result.items.length === 0) {
+      // Check if there was an error from the API
+      if (result.error) {
+        setSearchError(result.error);
+        toast({
+          title: "Search error",
+          description: result.error,
+          variant: "destructive",
+        });
+      } else if (!result.items || result.items.length === 0) {
+        setSearchError("No price information found");
         toast({
           title: "No results found",
           description: "No price information found for this item",
@@ -88,6 +92,7 @@ const PriceEstimateDisplay: React.FC<PriceEstimateDisplayProps> = ({
       }
     } catch (error) {
       console.error("Error searching for prices:", error);
+      setSearchError(error instanceof Error ? error.message : "Unknown error occurred");
       toast({
         title: "Search failed",
         description: "Unable to search for price information",
@@ -100,7 +105,7 @@ const PriceEstimateDisplay: React.FC<PriceEstimateDisplayProps> = ({
 
   const onSheetOpenChange = (open: boolean) => {
     setIsSheetOpen(open);
-    if (open && searchResults.length === 0 && !isLoading) {
+    if (open && searchResults.length === 0 && !isLoading && !searchError) {
       handlePriceSearch();
     }
   };
@@ -112,12 +117,6 @@ const PriceEstimateDisplay: React.FC<PriceEstimateDisplayProps> = ({
         <span className="text-sm font-normal text-muted-foreground ml-1">
           est. value
         </span>
-        
-        {confidenceScore && (
-          <span className="ml-2">
-            <ConfidenceBadge confidenceScore={confidenceScore} />
-          </span>
-        )}
         
         {itemName && (
           <Sheet open={isSheetOpen} onOpenChange={onSheetOpenChange}>
@@ -139,6 +138,17 @@ const PriceEstimateDisplay: React.FC<PriceEstimateDisplayProps> = ({
                 </SheetDescription>
               </SheetHeader>
               
+              {searchError && (
+                <Alert variant="destructive" className="mt-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    {searchError === "Google Search API configuration is incomplete" 
+                      ? "Price search API is not configured. Please contact an administrator." 
+                      : searchError}
+                  </AlertDescription>
+                </Alert>
+              )}
+              
               {priceRanges && priceRanges.count > 0 && (
                 <div className="mt-6 p-4 bg-muted rounded-md">
                   <h4 className="text-sm font-medium mb-2">Price Range Analysis</h4>
@@ -156,14 +166,10 @@ const PriceEstimateDisplay: React.FC<PriceEstimateDisplayProps> = ({
                       <p className="font-medium">{priceRanges.high !== null ? formatCurrency(priceRanges.high) : 'N/A'}</p>
                     </div>
                   </div>
-                  <div className="mt-2 flex justify-between items-center">
+                  <div className="mt-2 text-center">
                     <Badge variant="outline" className="text-xs">
                       Based on {priceRanges.count} price points
                     </Badge>
-                    
-                    {priceRanges.confidenceScore && (
-                      <ConfidenceBadge confidenceScore={priceRanges.confidenceScore} />
-                    )}
                   </div>
                 </div>
               )}
@@ -198,7 +204,9 @@ const PriceEstimateDisplay: React.FC<PriceEstimateDisplayProps> = ({
                   </div>
                 ) : (
                   <div className="text-center py-8">
-                    <p className="text-muted-foreground">No price information found</p>
+                    <p className="text-muted-foreground">
+                      {searchError ? "Search failed. Please try again." : "No price information found"}
+                    </p>
                     <Button
                       variant="outline"
                       size="sm"
@@ -212,16 +220,6 @@ const PriceEstimateDisplay: React.FC<PriceEstimateDisplayProps> = ({
                   </div>
                 )}
               </div>
-              
-              {priceRanges && priceRanges.confidenceScore?.level === 'low' && (
-                <div className="mb-4 p-3 border border-yellow-200 bg-yellow-50 rounded-md flex items-start">
-                  <AlertCircle className="h-5 w-5 text-yellow-500 mr-2 flex-shrink-0 mt-0.5" />
-                  <div className="text-sm text-yellow-700">
-                    <p className="font-medium">Low confidence estimate</p>
-                    <p>This price estimate may not be accurate due to limited data or inconsistent prices found online. Consider researching further.</p>
-                  </div>
-                </div>
-              )}
               
               <SheetFooter className="mt-4">
                 <Button 
