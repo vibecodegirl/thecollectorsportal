@@ -13,6 +13,7 @@ export const transformDatabaseItemToCollectionItem = (
     userId: item.user_id,
     dateAdded: item.created_at,
     lastUpdated: item.updated_at,
+    status: 'active', // Default status to active
     name: item.name,
     category: item.category || '',
     type: item.type || '',

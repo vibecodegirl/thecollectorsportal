@@ -1,4 +1,3 @@
-
 import { CollectionItem, ConfidenceScore, PriceEstimate, User } from "../types/collection";
 import { v4 as uuidv4 } from 'uuid';
 
@@ -19,6 +18,7 @@ const mockCollections: CollectionItem[] = [
     userId: "user1",
     dateAdded: new Date().toISOString(),
     lastUpdated: new Date().toISOString(),
+    status: 'active',
     
     category: "Coins",
     
@@ -80,6 +80,7 @@ const mockCollections: CollectionItem[] = [
     userId: "user1",
     dateAdded: new Date().toISOString(),
     lastUpdated: new Date().toISOString(),
+    status: 'active',
     
     category: "Trading Cards",
     
@@ -141,6 +142,7 @@ const mockCollections: CollectionItem[] = [
     userId: "user1",
     dateAdded: new Date().toISOString(),
     lastUpdated: new Date().toISOString(),
+    status: 'active',
     
     category: "Action Figures",
     
@@ -202,6 +204,7 @@ const mockCollections: CollectionItem[] = [
     userId: "user1",
     dateAdded: new Date().toISOString(),
     lastUpdated: new Date().toISOString(),
+    status: 'active',
     
     category: "Stamps",
     

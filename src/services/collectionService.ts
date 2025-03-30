@@ -108,6 +108,7 @@ const generateMockAnalysis = (request: AIAnalysisRequest): Partial<CollectionIte
   return {
     category: request.category || "Unknown",
     name: request.name || "Analyzed Item",
+    status: 'active',
     type: description.includes("Art Deco") ? "Art Deco Object" : "Unknown",
     manufacturer: description.includes("professional manufacturing") ? "Professional Manufacturer" : "Unknown",
     yearProduced: description.includes("mid-20th century") ? "1950s-1960s" : "Unknown",
