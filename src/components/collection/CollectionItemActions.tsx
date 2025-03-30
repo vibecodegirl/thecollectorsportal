@@ -1,14 +1,17 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { Edit, Eye, Trash, Archive } from 'lucide-react';
 import { useCollection } from '@/contexts/CollectionContext';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+
 interface CollectionItemActionsProps {
   itemId: string;
   itemName: string;
   onItemAction?: () => void; // Callback for triggering a refresh
 }
+
 const CollectionItemActions: React.FC<CollectionItemActionsProps> = ({
   itemId,
   itemName,
@@ -20,6 +23,7 @@ const CollectionItemActions: React.FC<CollectionItemActionsProps> = ({
   } = useCollection();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isArchiveDialogOpen, setIsArchiveDialogOpen] = useState(false);
+
   const handleDelete = async () => {
     try {
       console.log("Deleting item:", itemId);
@@ -33,6 +37,7 @@ const CollectionItemActions: React.FC<CollectionItemActionsProps> = ({
       console.error('Error deleting item:', error);
     }
   };
+
   const handleArchive = async () => {
     try {
       console.log("Archiving item:", itemId);
@@ -46,6 +51,7 @@ const CollectionItemActions: React.FC<CollectionItemActionsProps> = ({
       console.error('Error archiving item:', error);
     }
   };
+
   return <>
       <div className="flex gap-1">
         <Link to={`/collection/${itemId}`}>
@@ -64,7 +70,10 @@ const CollectionItemActions: React.FC<CollectionItemActionsProps> = ({
       <div className="flex gap-1">
         <AlertDialog open={isArchiveDialogOpen} onOpenChange={setIsArchiveDialogOpen}>
           <AlertDialogTrigger asChild>
-            
+            <Button variant="ghost" size="sm" className="text-amber-600">
+              <Archive className="mr-1 h-4 w-4" />
+              Archive
+            </Button>
           </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>
@@ -105,4 +114,5 @@ const CollectionItemActions: React.FC<CollectionItemActionsProps> = ({
       </div>
     </>;
 };
+
 export default CollectionItemActions;

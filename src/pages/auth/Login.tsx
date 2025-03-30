@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import MainLayout from '@/components/layout/MainLayout';
-import { BookOpen } from 'lucide-react';
+import { BookOpen, Package } from 'lucide-react';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -35,12 +35,12 @@ const Login = () => {
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
         <div className="mb-8 flex flex-col items-center">
           <Link to="/" className="flex items-center mb-4">
-            <BookOpen className="h-10 w-10 text-collector-gold" />
-            <span className="text-3xl font-bold ml-2 bg-clip-text text-transparent bg-gradient-to-r from-collector-navy to-collector-gold">
-              Collectopia
+            <Package className="h-10 w-10 text-collector-purple" />
+            <span className="text-3xl font-bold ml-2 bg-clip-text text-transparent bg-gradient-to-r from-collector-purple to-collector-cyan">
+              The Collectors Portal
             </span>
           </Link>
-          <h1 className="text-2xl font-bold text-center text-collector-navy">Welcome back to Collectopia</h1>
+          <h1 className="text-2xl font-bold text-center text-collector-purple">Welcome back to The Collectors Portal</h1>
           <p className="text-gray-600 mt-2 text-center">
             Log in to access your collection
           </p>
@@ -88,7 +88,7 @@ const Login = () => {
             <CardFooter className="flex flex-col">
               <Button 
                 type="submit" 
-                className="w-full bg-collector-navy hover:bg-collector-dark"
+                className="w-full bg-collector-purple hover:bg-purple-700"
                 disabled={isLoading}
               >
                 {isLoading ? 'Logging in...' : 'Log in'}
