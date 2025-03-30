@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
@@ -27,7 +28,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const ScanItem = () => {
   const navigate = useNavigate();
-  const { analyzeItem, addItem } = useCollection();
+  const { analyzeItem, analyzeImage } = useCollection();
   const { user } = useAuth();
   
   const [activeStep, setActiveStep] = useState(1);
@@ -79,32 +80,46 @@ const ScanItem = () => {
     setImages(prevImages => [...prevImages, ...newImages]);
   };
   
-  const handleCameraCapture = (imageSrc: string, analysis?: VisionAnalysisResult) => {
+  const handleCameraCapture = (imageSrc: string) => {
     setImages(prevImages => [...prevImages, imageSrc]);
     setIsCameraActive(false);
-    
-    if (analysis) {
-      setImageAnalysis(analysis);
-      
-      if (!itemName && analysis.suggestedType) {
-        setItemName(analysis.suggestedType);
-      }
-      
-      if (!category && analysis.suggestedCategory) {
-        setCategory(analysis.suggestedCategory);
-      }
-      
-      toast({
-        title: "Image analyzed",
-        description: "The object details have been analyzed using Google Vision AI",
-      });
-    }
-    
     setActiveTab("upload");
   };
   
   const removeImage = (index: number) => {
     setImages(images.filter((_, i) => i !== index));
+  };
+  
+  const analyzeImages = async () => {
+    if (images.length > 0 && images[0]) {
+      setScanning(true);
+      try {
+        const analysis = await analyzeImage(images[0]);
+        setImageAnalysis(analysis);
+        
+        if (!itemName && analysis.suggestedType) {
+          setItemName(analysis.suggestedType);
+        }
+        
+        if (!category && analysis.suggestedCategory) {
+          setCategory(analysis.suggestedCategory);
+        }
+        
+        toast({
+          title: "Image analyzed",
+          description: "The object details have been analyzed using Google Vision AI",
+        });
+      } catch (error) {
+        console.error("Error analyzing image:", error);
+        toast({
+          title: "Analysis failed",
+          description: "There was an error analyzing the image",
+          variant: "destructive",
+        });
+      } finally {
+        setScanning(false);
+      }
+    }
   };
   
   const handleScan = async () => {
@@ -489,6 +504,27 @@ const ScanItem = () => {
                         </div>
                       ))}
                     </div>
+                    
+                    {!imageAnalysis && images.length > 0 && (
+                      <Button 
+                        variant="outline" 
+                        className="mt-4 w-full"
+                        onClick={analyzeImages}
+                        disabled={scanning}
+                      >
+                        {scanning ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Analyzing Image...
+                          </>
+                        ) : (
+                          <>
+                            <Scan className="mr-2 h-4 w-4" />
+                            Analyze Image with AI
+                          </>
+                        )}
+                      </Button>
+                    )}
                   </div>
                 )}
                 

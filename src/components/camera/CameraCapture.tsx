@@ -2,10 +2,10 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Camera, SwitchCamera, Ban, ImageDown, Loader2 } from 'lucide-react';
-import { useCollection, VisionAnalysisResult } from '@/contexts/CollectionContext';
+import { useCollection } from '@/contexts/CollectionContext';
 
 interface CameraCaptureProps {
-  onCapture: (imageSrc: string, analysis?: VisionAnalysisResult) => void;
+  onCapture: (imageSrc: string) => void;
   onClose: () => void;
 }
 
@@ -16,8 +16,7 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose }) => 
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('environment');
   const [hasMultipleCameras, setHasMultipleCameras] = useState(false);
   const [permissionDenied, setPermissionDenied] = useState(false);
-  const [analyzing, setAnalyzing] = useState(false);
-  const { analyzeImage } = useCollection();
+  const [capturing, setCapturing] = useState(false);
 
   useEffect(() => {
     // Check if device has multiple cameras
@@ -71,9 +70,9 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose }) => 
     }
   };
 
-  const captureImage = async () => {
+  const captureImage = () => {
     if (videoRef.current && canvasRef.current) {
-      setAnalyzing(true);
+      setCapturing(true);
       
       const video = videoRef.current;
       const canvas = canvasRef.current;
@@ -90,17 +89,9 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose }) => 
         // Convert canvas to data URL
         const imageSrc = canvas.toDataURL('image/jpeg');
         
-        // Analyze the image with Google Vision AI
-        try {
-          const analysis = await analyzeImage(imageSrc);
-          console.log("Vision analysis result:", analysis);
-          onCapture(imageSrc, analysis);
-        } catch (error) {
-          console.error("Error analyzing image:", error);
-          onCapture(imageSrc); // Still send the image even if analysis fails
-        } finally {
-          setAnalyzing(false);
-        }
+        // Simply return the captured image without analyzing
+        onCapture(imageSrc);
+        setCapturing(false);
       }
     }
   };
@@ -156,11 +147,11 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose }) => 
             </Button>
           )}
           
-          <Button onClick={captureImage} className="bg-collector-navy" disabled={analyzing}>
-            {analyzing ? (
+          <Button onClick={captureImage} className="bg-collector-navy" disabled={capturing}>
+            {capturing ? (
               <>
                 <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                Analyzing...
+                Capturing...
               </>
             ) : (
               <>
