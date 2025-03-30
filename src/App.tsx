@@ -22,6 +22,7 @@ import ItemDetail from "./pages/collection/ItemDetail";
 import AddEditItem from "./pages/collection/AddEditItem";
 import ScanItem from "./pages/collection/ScanItem";
 import Judges from "./pages/Judges";
+import VideoDemo from "./pages/VideoDemo";
 
 const queryClient = new QueryClient();
 
@@ -49,6 +50,11 @@ const App = () => (
             <Route path="/judges" element={
               <ProtectedRoute>
                 <Judges />
+              </ProtectedRoute>
+            } />
+            <Route path="/video-demo" element={
+              <ProtectedRoute>
+                <VideoDemo />
               </ProtectedRoute>
             } />
             

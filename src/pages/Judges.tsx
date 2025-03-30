@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { CheckCircle, Circle, ExternalLink } from "lucide-react";
+import { CheckCircle, Circle, ExternalLink, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const Judges = () => {
@@ -24,10 +24,10 @@ const Judges = () => {
     {
       title: "Video Demo",
       items: [
-        { label: "Video demo created", isCompleted: false },
-        { label: "Video is 60 seconds or less", isCompleted: false },
-        { label: "Demonstrates core value proposition", isCompleted: false },
-        { label: "Highlights technology integrations used", isCompleted: false },
+        { label: "Video demo created", isCompleted: true },
+        { label: "Video is 60 seconds or less", isCompleted: true },
+        { label: "Demonstrates core value proposition", isCompleted: true },
+        { label: "Highlights technology integrations used", isCompleted: true },
       ],
     },
     {
@@ -70,11 +70,19 @@ const Judges = () => {
             Use this page to track your progress on competition requirements and prepare your submission for judges. 
             Check off items as you complete them to ensure you've covered all the necessary components.
           </p>
-          <Button className="bg-collector-purple hover:bg-purple-700">
-            <Link to="/dashboard" className="flex items-center">
-              Back to Dashboard
-            </Link>
-          </Button>
+          <div className="flex space-x-4">
+            <Button className="bg-collector-purple hover:bg-purple-700">
+              <Link to="/dashboard" className="flex items-center">
+                Back to Dashboard
+              </Link>
+            </Button>
+            <Button className="bg-collector-cyan hover:bg-cyan-700 animate-pulse-subtle">
+              <Link to="/video-demo" className="flex items-center gap-2">
+                <Video className="h-4 w-4" />
+                View Video Demo
+              </Link>
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl">
