@@ -1,4 +1,3 @@
-
 import { CollectionItem } from '@/types/collection';
 import { supabase } from '@/integrations/supabase/client';
 import { 
@@ -40,7 +39,6 @@ export const addCollectionItem = async (
 export const updateCollectionItem = async (
   item: CollectionItem
 ): Promise<CollectionItem> => {
-  // Fix: Only pass the item to transformCollectionItemToDatabase
   const supabaseItem = transformCollectionItemToDatabase(item);
 
   const { data, error } = await supabase
@@ -64,7 +62,6 @@ export const deleteCollectionItem = async (itemId: string): Promise<boolean> => 
 
   if (error) throw error;
   
-  // Check if any rows were affected
   if (count === 0) {
     throw new Error("Item not found or already deleted");
   }
@@ -74,7 +71,6 @@ export const deleteCollectionItem = async (itemId: string): Promise<boolean> => 
 
 export const searchItemPrices = async (query: string): Promise<{ title: string, link: string, price?: string }[]> => {
   try {
-    // Call the Supabase Edge Function to perform the Google search
     const { data, error } = await supabase.functions.invoke('search-prices', {
       body: { query }
     });
@@ -85,7 +81,6 @@ export const searchItemPrices = async (query: string): Promise<{ title: string, 
       return [];
     }
     
-    // Format the results
     return data.items.map((item: any) => ({
       title: item.title,
       link: item.link,
@@ -97,11 +92,9 @@ export const searchItemPrices = async (query: string): Promise<{ title: string, 
   }
 };
 
-// Helper function to extract price from Google search snippet
 const extractPriceFromSnippet = (snippet?: string): string | undefined => {
   if (!snippet) return undefined;
   
-  // Look for price patterns like $XX.XX or $XX,XXX.XX
   const priceMatch = snippet.match(/\$\d{1,3}(,\d{3})*(\.\d{2})?/);
   return priceMatch ? priceMatch[0] : undefined;
 };
@@ -110,7 +103,6 @@ export const analyzeCollectionItem = async (
   request: AIAnalysisRequest
 ): Promise<Partial<CollectionItem>> => {
   try {
-    // Fetch the analysis from Supabase Edge Function that has access to the API keys
     const { data, error } = await supabase.functions.invoke('analyze-item', {
       body: { 
         images: request.images,
@@ -122,7 +114,6 @@ export const analyzeCollectionItem = async (
     
     if (error) throw error;
     
-    // If the Edge Function is not yet implemented, use the mock data
     if (!data) {
       return generateMockAnalysis(request);
     }
@@ -130,14 +121,11 @@ export const analyzeCollectionItem = async (
     return data;
   } catch (error) {
     console.error("Error analyzing item:", error);
-    // Fallback to mock data if the Edge Function call fails
     return generateMockAnalysis(request);
   }
 };
 
-// Helper function to generate mock analysis data for demo purposes
 const generateMockAnalysis = (request: AIAnalysisRequest): Partial<CollectionItem> => {
-  // Enhance the mock data with any description passed in the request
   const description = request.description || "";
   
   return {
