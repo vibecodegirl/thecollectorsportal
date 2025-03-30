@@ -4,7 +4,7 @@ import {
   transformDatabaseItemToCollectionItem, 
   transformCollectionItemToDatabase 
 } from '@/utils/collectionTransformers';
-import { AIAnalysisRequest } from '@/contexts/CollectionContext';
+import { AIAnalysisRequest, VisionAnalysisResult } from '@/contexts/CollectionContext';
 
 export const fetchCollectionItems = async (userId: string): Promise<CollectionItem[]> => {
   const { data, error } = await supabase
@@ -122,6 +122,27 @@ export const analyzeCollectionItem = async (
   } catch (error) {
     console.error("Error analyzing item:", error);
     return generateMockAnalysis(request);
+  }
+};
+
+export const analyzeImageWithVision = async (image: string): Promise<VisionAnalysisResult> => {
+  try {
+    const { data, error } = await supabase.functions.invoke('analyze-with-vision', {
+      body: { 
+        images: [image]
+      }
+    });
+    
+    if (error) throw error;
+    
+    if (!data) {
+      throw new Error("No analysis data returned");
+    }
+    
+    return data;
+  } catch (error) {
+    console.error("Error analyzing image with Vision AI:", error);
+    throw error;
   }
 };
 

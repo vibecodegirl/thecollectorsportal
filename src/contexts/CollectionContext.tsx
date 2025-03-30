@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { CollectionItem, ItemStatus, SaleInfo } from '../types/collection';
 import { useAuth } from './AuthContext';
@@ -8,7 +7,8 @@ import {
   addCollectionItem,
   updateCollectionItem,
   deleteCollectionItem,
-  analyzeCollectionItem
+  analyzeCollectionItem,
+  analyzeImageWithVision
 } from '@/services/collectionService';
 
 interface CollectionContextType {
@@ -21,6 +21,7 @@ interface CollectionContextType {
   archiveItem: (itemId: string) => Promise<CollectionItem>;
   markItemAsSold: (itemId: string, saleInfo: SaleInfo) => Promise<CollectionItem>;
   analyzeItem: (request: AIAnalysisRequest) => Promise<Partial<CollectionItem>>;
+  analyzeImage: (image: string) => Promise<VisionAnalysisResult>;
   refreshCollections: () => void;
   filteredCollections: (status?: ItemStatus) => CollectionItem[];
 }
@@ -30,6 +31,25 @@ export interface AIAnalysisRequest {
   category?: string;
   description?: string;
   name?: string;
+}
+
+export interface VisionAnalysisResult {
+  primaryObject: {
+    shape: string;
+    colors: {
+      dominant: string;
+      accents: string[];
+    };
+    texture: string;
+    material: string;
+    distinguishingFeatures: string[];
+    timePeriod?: string;
+    possibleFunctions?: string[];
+    style?: string;
+  };
+  additionalObservations: string;
+  suggestedCategory?: string;
+  suggestedType?: string;
 }
 
 const CollectionContext = createContext<CollectionContextType | undefined>(undefined);
@@ -55,7 +75,6 @@ export const CollectionProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     try {
       const items = await fetchCollectionItems(user.id);
-      // Ensure all items have a status field (for backward compatibility)
       const itemsWithStatus = items.map(item => ({
         ...item,
         status: item.status || 'active' as ItemStatus
@@ -84,7 +103,6 @@ export const CollectionProvider = ({ children }: { children: ReactNode }) => {
     try {
       if (!user) throw new Error('User must be logged in to add items');
       
-      // Set default status to active
       const itemWithStatus = {
         ...item,
         status: 'active' as ItemStatus
@@ -141,7 +159,6 @@ export const CollectionProvider = ({ children }: { children: ReactNode }) => {
       
       await deleteCollectionItem(itemId);
       
-      // Verify the item was removed from the database before updating the state
       setCollections(prev => {
         const filteredItems = prev.filter(i => i.id !== itemId);
         if (filteredItems.length === prev.length) {
@@ -239,7 +256,32 @@ export const CollectionProvider = ({ children }: { children: ReactNode }) => {
       throw error;
     }
   };
-  
+
+  const analyzeImage = async (image: string): Promise<VisionAnalysisResult> => {
+    try {
+      toast({
+        title: "Analyzing image",
+        description: "Google Vision AI is analyzing your image...",
+      });
+      
+      const result = await analyzeImageWithVision(image);
+      
+      toast({
+        title: "Image analysis complete",
+        description: "Vision analysis has identified key features of your item",
+      });
+      
+      return result;
+    } catch (error: any) {
+      toast({
+        title: "Image analysis failed",
+        description: error.message || "Failed to analyze the image with Vision AI",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
   const filteredCollections = (status?: ItemStatus) => {
     if (!status) return collections;
     return collections.filter(item => item.status === status);
@@ -257,6 +299,7 @@ export const CollectionProvider = ({ children }: { children: ReactNode }) => {
         archiveItem,
         markItemAsSold,
         analyzeItem,
+        analyzeImage,
         refreshCollections,
         filteredCollections
       }}

@@ -18,11 +18,11 @@ import {
   Info
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useCollection } from '@/contexts/CollectionContext';
+import { useCollection, VisionAnalysisResult } from '@/contexts/CollectionContext';
 import { toast } from '@/components/ui/use-toast';
 import { CollectionItem } from '@/types/collection';
 import { useAuth } from '@/contexts/AuthContext';
-import CameraCapture, { ImageAnalysisResult } from '@/components/camera/CameraCapture';
+import CameraCapture from '@/components/camera/CameraCapture';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const ScanItem = () => {
@@ -39,13 +39,11 @@ const ScanItem = () => {
   const [scanResults, setScanResults] = useState<Partial<CollectionItem> | null>(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("upload");
-  const [imageAnalysis, setImageAnalysis] = useState<ImageAnalysisResult | null>(null);
+  const [imageAnalysis, setImageAnalysis] = useState<VisionAnalysisResult | null>(null);
   
-  // Check if camera is supported
   const [isCameraSupported, setIsCameraSupported] = useState<boolean | null>(null);
   
   React.useEffect(() => {
-    // Check if camera is supported
     const checkCameraSupport = async () => {
       try {
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -53,16 +51,12 @@ const ScanItem = () => {
           return;
         }
         
-        // Try to get camera access to confirm support
         await navigator.mediaDevices.getUserMedia({ video: true })
           .then(stream => {
-            // Camera is supported and permission granted
             setIsCameraSupported(true);
-            // Stop the camera stream immediately since we're just checking
             stream.getTracks().forEach(track => track.stop());
           })
           .catch(error => {
-            // If permission denied but device has camera
             if (error.name === "NotAllowedError" || error.name === "SecurityError") {
               setIsCameraSupported(true);
             } else {
@@ -81,38 +75,31 @@ const ScanItem = () => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
     
-    // For demo purposes, we'll use URL.createObjectURL
-    // In a real app, we'd upload these to a server
     const newImages = Array.from(files).map(file => URL.createObjectURL(file));
     setImages(prevImages => [...prevImages, ...newImages]);
   };
   
-  const handleCameraCapture = (imageSrc: string, analysis?: ImageAnalysisResult) => {
+  const handleCameraCapture = (imageSrc: string, analysis?: VisionAnalysisResult) => {
     setImages(prevImages => [...prevImages, imageSrc]);
     setIsCameraActive(false);
     
     if (analysis) {
       setImageAnalysis(analysis);
       
-      // Use analysis to pre-fill some fields
-      if (!itemName && analysis.primaryObject?.style) {
-        const suggestedName = `${analysis.primaryObject.style} Item`;
-        setItemName(suggestedName);
+      if (!itemName && analysis.suggestedType) {
+        setItemName(analysis.suggestedType);
       }
       
-      // Set a category if one can be inferred
-      if (!category && analysis.primaryObject?.possibleFunctions?.length) {
-        const suggestedCategory = analysis.primaryObject.possibleFunctions[0];
-        setCategory(suggestedCategory);
+      if (!category && analysis.suggestedCategory) {
+        setCategory(analysis.suggestedCategory);
       }
       
       toast({
         title: "Image analyzed",
-        description: "The object details have been analyzed",
+        description: "The object details have been analyzed using Google Vision AI",
       });
     }
     
-    // Auto-switch to upload tab after capture
     setActiveTab("upload");
   };
   
@@ -133,7 +120,6 @@ const ScanItem = () => {
     setScanning(true);
     
     try {
-      // If we have image analysis, enhance the request with that data
       const enhancedDescription = imageAnalysis ? 
         `${imageAnalysis.primaryObject.shape} object made of ${imageAnalysis.primaryObject.material}. ` +
         `${imageAnalysis.primaryObject.texture} texture with ${imageAnalysis.primaryObject.colors.dominant} color. ` +
@@ -141,20 +127,24 @@ const ScanItem = () => {
         undefined;
       
       const scanRequest = {
-        name: itemName,
-        category,
+        name: itemName || imageAnalysis?.suggestedType,
+        category: category || imageAnalysis?.suggestedCategory,
         images,
         description: enhancedDescription
       };
       
       const scanResult = await analyzeItem(scanRequest);
       
-      // If we have image analysis, enhance the scan results
       if (imageAnalysis) {
-        scanResult.condition = scanResult.condition || imageAnalysis.primaryObject.condition || "Good";
-        scanResult.type = scanResult.type || imageAnalysis.primaryObject.style || "Unknown";
+        scanResult.condition = scanResult.condition || "Good";
+        scanResult.type = scanResult.type || imageAnalysis.suggestedType || "Unknown";
         scanResult.notes = scanResult.notes || imageAnalysis.additionalObservations;
         scanResult.yearProduced = scanResult.yearProduced || imageAnalysis.primaryObject.timePeriod || "Unknown";
+        
+        if (imageAnalysis.primaryObject.material && imageAnalysis.primaryObject.material !== "Unknown material") {
+          scanResult.primaryObject = scanResult.primaryObject || {};
+          scanResult.primaryObject.material = imageAnalysis.primaryObject.material;
+        }
       }
       
       setScanResults(scanResult);
@@ -181,7 +171,6 @@ const ScanItem = () => {
     setSaving(true);
     
     try {
-      // Combine scan results with uploaded images
       const itemData: Partial<CollectionItem> = {
         ...scanResults,
         userId: user.id,
@@ -212,7 +201,6 @@ const ScanItem = () => {
   const handleEdit = () => {
     if (!scanResults || !user) return;
     
-    // Combine scan results with uploaded images
     const itemData: Partial<CollectionItem> = {
       ...scanResults,
       userId: user.id,
@@ -221,7 +209,6 @@ const ScanItem = () => {
       category: scanResults.category || category
     };
     
-    // Store in sessionStorage to be accessed by the edit page
     sessionStorage.setItem('scanResults', JSON.stringify(itemData));
     navigate('/add-item');
   };
@@ -235,7 +222,6 @@ const ScanItem = () => {
     }).format(amount);
   };
 
-  // Render image upload and camera UI based on step
   const renderImageInput = () => {
     if (isCameraActive) {
       return (
@@ -317,7 +303,6 @@ const ScanItem = () => {
     );
   };
 
-  // Render image analysis details if available
   const renderImageAnalysisDetails = () => {
     if (!imageAnalysis) return null;
     
@@ -326,11 +311,25 @@ const ScanItem = () => {
         <CardHeader className="pb-2">
           <CardTitle className="text-sm flex items-center">
             <Info className="w-4 h-4 mr-1" />
-            Image Analysis Details
+            Google Vision AI Analysis
           </CardTitle>
         </CardHeader>
         <CardContent className="text-sm">
           <div className="space-y-3">
+            {imageAnalysis.suggestedType && (
+              <div>
+                <p className="font-medium">Suggested Type:</p>
+                <p className="text-muted-foreground">{imageAnalysis.suggestedType}</p>
+              </div>
+            )}
+            
+            {imageAnalysis.suggestedCategory && (
+              <div>
+                <p className="font-medium">Suggested Category:</p>
+                <p className="text-muted-foreground">{imageAnalysis.suggestedCategory}</p>
+              </div>
+            )}
+            
             <div>
               <p className="font-medium">Object Shape:</p>
               <p className="text-muted-foreground">{imageAnalysis.primaryObject.shape}</p>
@@ -340,18 +339,20 @@ const ScanItem = () => {
               <p className="font-medium">Colors:</p>
               <p className="text-muted-foreground">
                 Dominant: {imageAnalysis.primaryObject.colors.dominant}<br />
-                Accents: {imageAnalysis.primaryObject.colors.accents.join(", ")}
+                {imageAnalysis.primaryObject.colors.accents.length > 0 && (
+                  <>Accents: {imageAnalysis.primaryObject.colors.accents.join(", ")}</>
+                )}
               </p>
             </div>
             
             <div>
               <p className="font-medium">Material & Texture:</p>
               <p className="text-muted-foreground">
-                {imageAnalysis.primaryObject.material} with {imageAnalysis.primaryObject.texture.toLowerCase()} texture
+                {imageAnalysis.primaryObject.material} with {imageAnalysis.primaryObject.texture.toLowerCase()}
               </p>
             </div>
             
-            {imageAnalysis.primaryObject.distinguishingFeatures && (
+            {imageAnalysis.primaryObject.distinguishingFeatures && imageAnalysis.primaryObject.distinguishingFeatures.length > 0 && (
               <div>
                 <p className="font-medium">Distinguishing Features:</p>
                 <ul className="list-disc list-inside text-muted-foreground">
@@ -376,10 +377,10 @@ const ScanItem = () => {
               </div>
             )}
             
-            {imageAnalysis.primaryObject.condition && (
+            {imageAnalysis.primaryObject.possibleFunctions && imageAnalysis.primaryObject.possibleFunctions.length > 0 && (
               <div>
-                <p className="font-medium">Condition:</p>
-                <p className="text-muted-foreground">{imageAnalysis.primaryObject.condition}</p>
+                <p className="font-medium">Possible Functions:</p>
+                <p className="text-muted-foreground">{imageAnalysis.primaryObject.possibleFunctions.join(", ")}</p>
               </div>
             )}
             
@@ -408,7 +409,6 @@ const ScanItem = () => {
           Back
         </Button>
         
-        {/* Step indicator */}
         <div className="mb-8">
           <div className="flex items-center">
             <div className={`flex items-center justify-center w-10 h-10 rounded-full ${

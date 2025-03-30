@@ -1,29 +1,11 @@
-
 import React, { useRef, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Camera, SwitchCamera, Ban, ImageDown, Loader2 } from 'lucide-react';
+import { useCollection, VisionAnalysisResult } from '@/contexts/CollectionContext';
 
 interface CameraCaptureProps {
-  onCapture: (imageSrc: string, analysis?: ImageAnalysisResult) => void;
+  onCapture: (imageSrc: string, analysis?: VisionAnalysisResult) => void;
   onClose: () => void;
-}
-
-export interface ImageAnalysisResult {
-  primaryObject: {
-    shape: string;
-    colors: {
-      dominant: string;
-      accents: string[];
-    };
-    texture: string;
-    material: string;
-    distinguishingFeatures: string[];
-    timePeriod?: string;
-    possibleFunctions?: string[];
-    style?: string;
-    condition?: string;
-  };
-  additionalObservations: string;
 }
 
 const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose }) => {
@@ -34,6 +16,7 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose }) => 
   const [hasMultipleCameras, setHasMultipleCameras] = useState(false);
   const [permissionDenied, setPermissionDenied] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
+  const { analyzeImage } = useCollection();
 
   useEffect(() => {
     // Check if device has multiple cameras
@@ -87,37 +70,6 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose }) => 
     }
   };
 
-  const mockAnalyzeImage = async (imageSrc: string): Promise<ImageAnalysisResult> => {
-    // In a real app, this would call an AI service
-    // For demo purposes, we'll simulate processing time
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        // Mock analysis result
-        resolve({
-          primaryObject: {
-            shape: "Rectangular with rounded corners",
-            colors: {
-              dominant: "Silver/metallic",
-              accents: ["Black", "Gold", "White"]
-            },
-            texture: "Smooth with engraved markings",
-            material: "Metal alloy, possibly silver or nickel with bronze elements",
-            distinguishingFeatures: [
-              "Engraved serial number",
-              "Patina suggesting age",
-              "Unique hallmark on bottom edge"
-            ],
-            timePeriod: "Likely mid-20th century (1950s-1960s)",
-            possibleFunctions: ["Decorative", "Commemorative", "Functional tool"],
-            style: "Art Deco influence with modernist elements",
-            condition: "Good with minor wear consistent with age"
-          },
-          additionalObservations: "The object shows signs of careful handling over time with minimal damage. The craftsmanship suggests professional manufacturing rather than artisanal production. Several markings indicate potential historical significance."
-        });
-      }, 1500);
-    });
-  };
-
   const captureImage = async () => {
     if (videoRef.current && canvasRef.current) {
       setAnalyzing(true);
@@ -137,9 +89,9 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose }) => 
         // Convert canvas to data URL
         const imageSrc = canvas.toDataURL('image/jpeg');
         
-        // Analyze the image
+        // Analyze the image with Google Vision AI
         try {
-          const analysis = await mockAnalyzeImage(imageSrc);
+          const analysis = await analyzeImage(imageSrc);
           onCapture(imageSrc, analysis);
         } catch (error) {
           console.error("Error analyzing image:", error);
