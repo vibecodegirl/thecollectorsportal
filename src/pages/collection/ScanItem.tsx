@@ -25,6 +25,7 @@ import { CollectionItem } from '@/types/collection';
 import { useAuth } from '@/contexts/AuthContext';
 import CameraCapture from '@/components/camera/CameraCapture';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { searchByImage } from '@/services/collection/priceService';
 
 const ScanItem = () => {
   const navigate = useNavigate();
