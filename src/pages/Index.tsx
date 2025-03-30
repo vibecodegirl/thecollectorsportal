@@ -1,10 +1,9 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/contexts/AuthContext';
-import { ArrowRight, BookOpen, Camera, Check, Shield, Clock, Sparkles, Database } from 'lucide-react';
+import { ArrowRight, BookOpen, Camera, Check, Shield, Clock, Sparkles, Database, Award, GalleryThumbnails, Star, Gem, Trophy } from 'lucide-react';
 
 const Index = () => {
   const { user } = useAuth();
@@ -70,29 +69,30 @@ const Index = () => {
             </div>
             <div className="hidden md:block">
               <div className="relative">
-                <div className="absolute -top-4 -left-4 w-full h-full rounded-lg bg-collector-gold opacity-70 blur-md animate-pulse"></div>
-                <img 
-                  src="https://images.unsplash.com/photo-1501286353178-1ec881214838?ixlib=rb-1.2.1&auto=format&fit=crop&q=80&w=600" 
-                  alt="Fun monkey with collectibles" 
-                  className="rounded-lg shadow-lg relative z-10 animate-float"
-                />
-                {/* Add a fun floating collectible element */}
-                <div className="absolute -top-8 -right-8 h-24 w-24 animate-float" style={{ animationDelay: "1.5s" }}>
-                  <img 
-                    src="https://images.unsplash.com/photo-1582562124811-c09040d0a901?ixlib=rb-1.2.1&auto=format&fit=crop&q=80&w=200" 
-                    alt="Collectible item" 
-                    className="rounded-full object-cover h-full w-full border-4 border-collector-cyan shadow-lg"
-                  />
+                <div className="absolute -top-4 -left-4 w-full h-full rounded-full bg-collector-gold opacity-70 blur-md animate-pulse"></div>
+                <div className="relative z-10 bg-collector-navy/80 backdrop-blur-md rounded-full p-8 border-4 border-collector-gold shadow-2xl animate-float flex items-center justify-center">
+                  <div className="relative w-48 h-48 flex items-center justify-center">
+                    <div className="absolute inset-0 rounded-full bg-collector-cyan/20 animate-pulse-subtle"></div>
+                    <Trophy className="w-24 h-24 text-collector-gold animate-pulse-glow absolute" style={{ top: '10%', left: '10%' }} />
+                    <Award className="w-16 h-16 text-collector-purple absolute z-20" style={{ bottom: '20%', right: '15%' }} />
+                    <Gem className="w-20 h-20 text-collector-magenta absolute z-20" style={{ top: '15%', right: '20%' }} />
+                    <Star className="w-12 h-12 text-collector-orange absolute z-20" style={{ bottom: '15%', left: '25%' }}/>
+                    <Sparkles className="w-32 h-32 text-white/70 absolute inset-0 m-auto" />
+                  </div>
                 </div>
-                {/* Add another floating collectible element */}
+                <div className="absolute -top-8 -right-8 h-24 w-24 animate-float" style={{ animationDelay: "1.5s" }}>
+                  <div className="w-full h-full rounded-full bg-collector-cyan/80 flex items-center justify-center border-2 border-white/50 shadow-lg">
+                    <GalleryThumbnails className="w-12 h-12 text-white" />
+                  </div>
+                </div>
                 <div className="absolute -bottom-10 left-12 h-20 w-20 animate-float" style={{ animationDelay: "0.7s" }}>
-                  <img 
-                    src="https://images.unsplash.com/photo-1535268647677-300dbf3d78d1?ixlib=rb-1.2.1&auto=format&fit=crop&q=80&w=200" 
-                    alt="Collectible item" 
-                    className="rounded-full object-cover h-full w-full border-4 border-collector-magenta shadow-lg"
-                  />
+                  <div className="w-full h-full rounded-full bg-collector-magenta/80 flex items-center justify-center border-2 border-white/50 shadow-lg">
+                    <Gem className="w-10 h-10 text-white" />
+                  </div>
                 </div>
                 <div className="absolute -bottom-8 -right-8 w-32 h-32 rounded-full bg-collector-purple opacity-60 blur-md"></div>
+                <div className="absolute inset-0 border-4 border-white/20 rounded-full animate-pulse-subtle z-0"></div>
+                <div className="absolute inset-0 border-2 border-white/10 rounded-full animate-spin-slow z-0" style={{ animationDuration: '30s' }}></div>
               </div>
             </div>
           </div>
