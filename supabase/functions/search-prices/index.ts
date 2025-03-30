@@ -45,14 +45,11 @@ serve(async (req) => {
 
     console.log(`Searching for prices with query: ${query}`);
     
-    // Enhance the query to focus on items for sale with prices
-    const enhancedQuery = `${query} for sale price value worth`;
-    
     // Call the Google Custom Search JSON API
     const searchUrl = new URL("https://www.googleapis.com/customsearch/v1");
     searchUrl.searchParams.append("key", apiKey);
     searchUrl.searchParams.append("cx", cx || "");  // Custom Search Engine ID
-    searchUrl.searchParams.append("q", enhancedQuery);
+    searchUrl.searchParams.append("q", query);
     searchUrl.searchParams.append("num", "10");  // Increase results to 10
     
     console.log(`Making request to Google Search API: ${searchUrl.toString()}`);
@@ -76,10 +73,14 @@ serve(async (req) => {
     // Extract price ranges from search results
     const priceRanges = extractPriceRanges(data);
     
+    // Extract marketplace information
+    const marketplace = extractMarketplaceInfo(data);
+    
     return new Response(
       JSON.stringify({
         items: data.items || [],
-        priceRanges
+        priceRanges,
+        marketplace
       }),
       {
         status: 200,
@@ -106,7 +107,7 @@ function extractPriceRanges(data) {
     return { low: null, average: null, high: null, count: 0 };
   }
   
-  // Extract prices from snippets and titles
+  // Extract prices from snippets, titles, and structured data
   data.items.forEach(item => {
     // Try to extract from snippet
     if (item.snippet) {
@@ -143,11 +144,23 @@ function extractPriceRanges(data) {
         }
       });
     }
+    
+    // Try to extract from product if available
+    if (item.pagemap?.product) {
+      item.pagemap.product.forEach(product => {
+        if (product.price) {
+          const price = parseFloat(product.price.replace(/[^0-9.]/g, ''));
+          if (!isNaN(price) && price > 0) {
+            prices.push(price);
+          }
+        }
+      });
+    }
   });
   
   // Filter out any invalid prices and sort
   const validPrices = prices
-    .filter(price => !isNaN(price) && price > 0)
+    .filter(price => !isNaN(price) && price > 0 && price < 100000) // Add upper limit to filter out anomalies
     .sort((a, b) => a - b);
   
   if (validPrices.length === 0) {
@@ -155,8 +168,16 @@ function extractPriceRanges(data) {
   }
   
   // Calculate low, average, high
-  const low = validPrices[0];
-  const high = validPrices[validPrices.length - 1];
+  // For low and high, use 10th and 90th percentiles to avoid outliers
+  const low = validPrices.length >= 10 
+    ? validPrices[Math.floor(validPrices.length * 0.1)] 
+    : validPrices[0];
+    
+  const high = validPrices.length >= 10 
+    ? validPrices[Math.floor(validPrices.length * 0.9)] 
+    : validPrices[validPrices.length - 1];
+  
+  // Calculate average
   const sum = validPrices.reduce((total, price) => total + price, 0);
   const average = sum / validPrices.length;
   
@@ -184,5 +205,101 @@ function extractPricesFromText(text) {
     }
   }
   
+  // Also match X dollars or X USD format
+  const dollarRegex = /(\d+(?:,\d+)*(?:\.\d{1,2})?)(?:\s+)(?:dollars|USD)/gi;
+  while ((match = dollarRegex.exec(text)) !== null) {
+    const priceStr = match[1].replace(/,/g, '');
+    const price = parseFloat(priceStr);
+    if (!isNaN(price) && price > 0) {
+      prices.push(price);
+    }
+  }
+  
   return prices;
+}
+
+// Function to extract marketplace information from search results
+function extractMarketplaceInfo(data) {
+  if (!data.items || !Array.isArray(data.items)) {
+    return [];
+  }
+  
+  const marketplaceMap = new Map();
+  const knownMarketplaces = [
+    { domain: "ebay.com", name: "eBay" },
+    { domain: "amazon.com", name: "Amazon" },
+    { domain: "etsy.com", name: "Etsy" },
+    { domain: "rubylane.com", name: "Ruby Lane" },
+    { domain: "sothebys.com", name: "Sotheby's" },
+    { domain: "christies.com", name: "Christie's" },
+    { domain: "catawiki.com", name: "Catawiki" },
+    { domain: "bonhams.com", name: "Bonhams" },
+    { domain: "ecrater.com", name: "eCrater" },
+    { domain: "mercari.com", name: "Mercari" },
+    { domain: "poshmark.com", name: "Poshmark" },
+    { domain: "1stdibs.com", name: "1stdibs" },
+    { domain: "invaluable.com", name: "Invaluable" },
+    { domain: "liveauctioneers.com", name: "LiveAuctioneers" },
+    { domain: "heritage.com", name: "Heritage Auctions" },
+    { domain: "ha.com", name: "Heritage Auctions" },
+    { domain: "worthpoint.com", name: "WorthPoint" },
+    { domain: "shopgoodwill.com", name: "ShopGoodwill" },
+    { domain: "proxibid.com", name: "Proxibid" },
+    { domain: "walmart.com", name: "Walmart" },
+    { domain: "target.com", name: "Target" }
+  ];
+  
+  // Process each search result
+  data.items.forEach(item => {
+    if (!item.link) return;
+    
+    try {
+      const url = new URL(item.link);
+      const hostname = url.hostname.replace('www.', '');
+      
+      // Find matching marketplace
+      let marketplaceName = null;
+      
+      for (const marketplace of knownMarketplaces) {
+        if (hostname.includes(marketplace.domain)) {
+          marketplaceName = marketplace.name;
+          break;
+        }
+      }
+      
+      // If no known marketplace found, use the hostname
+      if (!marketplaceName) {
+        // Extract the main domain (e.g., example.com from sub.example.com)
+        const domainParts = hostname.split('.');
+        if (domainParts.length >= 2) {
+          const mainDomain = `${domainParts[domainParts.length - 2]}.${domainParts[domainParts.length - 1]}`;
+          marketplaceName = mainDomain.charAt(0).toUpperCase() + mainDomain.slice(1);
+        } else {
+          marketplaceName = hostname;
+        }
+      }
+      
+      // Add to map if not already present
+      if (!marketplaceMap.has(marketplaceName)) {
+        marketplaceMap.set(marketplaceName, {
+          name: marketplaceName,
+          url: `https://${hostname}`,
+          count: 1
+        });
+      } else {
+        // Increment count if already present
+        const marketplace = marketplaceMap.get(marketplaceName);
+        marketplace.count += 1;
+        marketplaceMap.set(marketplaceName, marketplace);
+      }
+      
+    } catch (error) {
+      // Skip invalid URLs
+      console.error("Error parsing URL:", error);
+    }
+  });
+  
+  // Convert map to array and sort by count
+  return Array.from(marketplaceMap.values())
+    .sort((a, b) => b.count - a.count);
 }
