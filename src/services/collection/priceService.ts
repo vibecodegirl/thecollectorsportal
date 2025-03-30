@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 interface PriceRange {
@@ -17,6 +16,8 @@ interface SearchResult {
     url: string;
     count: number;
   }[];
+  error?: string;
+  details?: string;
 }
 
 export const searchItemPrices = async (query: string): Promise<SearchResult> => {
@@ -48,7 +49,9 @@ export const searchItemPrices = async (query: string): Promise<SearchResult> => 
       return { 
         items: data.items || [],
         priceRanges: data.priceRanges,
-        marketplace: data.marketplace
+        marketplace: data.marketplace,
+        error: data.error,
+        details: data.details
       };
     }
     
@@ -69,7 +72,10 @@ export const searchItemPrices = async (query: string): Promise<SearchResult> => 
     };
   } catch (error) {
     console.error("Error searching for item prices:", error);
-    return { items: [] };
+    return { 
+      items: [],
+      error: error instanceof Error ? error.message : "Unknown error occurred"
+    };
   }
 };
 
