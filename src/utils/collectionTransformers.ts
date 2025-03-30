@@ -93,7 +93,6 @@ export const transformCollectionItemToDatabase = (item: Partial<CollectionItem>,
   // Calculate the estimated value as the market value from price estimates if available
   const estimatedValue = item.priceEstimate?.marketValue || 0;
   
-  // Only include fields that are actually in the database table
   return {
     user_id: userId || item.userId,
     name: item.name || '',
@@ -102,6 +101,7 @@ export const transformCollectionItemToDatabase = (item: Partial<CollectionItem>,
     condition: item.condition,
     estimated_value: estimatedValue,
     image_url: item.images && item.images.length > 0 ? item.images[0] : null,
+    acquisition_date: null,
     type: item.type,
     manufacturer: item.manufacturer,
     year_produced: item.yearProduced,
@@ -116,7 +116,5 @@ export const transformCollectionItemToDatabase = (item: Partial<CollectionItem>,
     dimensions: item.dimensions,
     weight: item.weight,
     rarity: item.rarity
-    // Note: confidenceScore, primaryObject, and other complex objects are not stored directly
-    // in the database. They are calculated when the item is retrieved.
   };
 };
