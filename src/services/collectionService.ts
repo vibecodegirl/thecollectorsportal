@@ -1,4 +1,3 @@
-
 import { CollectionItem } from '@/types/collection';
 import { supabase } from '@/integrations/supabase/client';
 import { 
@@ -72,12 +71,13 @@ export const deleteCollectionItem = async (itemId: string): Promise<boolean> => 
 
 export const searchItemPrices = async (query: string): Promise<{ title: string, link: string, price?: string }[]> => {
   try {
-    const { data, error } = await supabase.functions.invoke('search-prices', {
+    const response = await supabase.functions.invoke('search-prices', {
       body: { query }
     });
 
-    if (error) throw error;
+    if (response.error) throw response.error;
     
+    const data = response.data;
     if (!data || !Array.isArray(data.items)) {
       return [];
     }
@@ -104,7 +104,7 @@ export const analyzeCollectionItem = async (
   request: AIAnalysisRequest
 ): Promise<Partial<CollectionItem>> => {
   try {
-    const { data, error } = await supabase.functions.invoke('analyze-item', {
+    const response = await supabase.functions.invoke('analyze-item', {
       body: { 
         images: request.images,
         category: request.category,
@@ -113,8 +113,9 @@ export const analyzeCollectionItem = async (
       }
     });
     
-    if (error) throw error;
+    if (response.error) throw response.error;
     
+    const data = response.data;
     if (!data) {
       return generateMockAnalysis(request);
     }
@@ -128,14 +129,15 @@ export const analyzeCollectionItem = async (
 
 export const analyzeImageWithVision = async (image: string): Promise<VisionAnalysisResult> => {
   try {
-    const { data, error } = await supabase.functions.invoke('analyze-with-vision', {
+    const response = await supabase.functions.invoke('analyze-with-vision', {
       body: { 
         images: [image]
       }
     });
     
-    if (error) throw error;
+    if (response.error) throw response.error;
     
+    const data = response.data;
     if (!data) {
       throw new Error("No analysis data returned");
     }
