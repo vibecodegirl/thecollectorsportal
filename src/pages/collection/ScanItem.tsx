@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
@@ -75,8 +76,16 @@ const ScanItem = () => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
     
-    const newImages = Array.from(files).map(file => URL.createObjectURL(file));
-    setImages(prevImages => [...prevImages, ...newImages]);
+    Array.from(files).forEach(file => {
+      // Convert file to base64 string
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (e.target?.result) {
+          setImages(prevImages => [...prevImages, e.target!.result as string]);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
   };
   
   const handleCameraCapture = (imageSrc: string) => {

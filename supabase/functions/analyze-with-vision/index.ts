@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const geminiApiKey = Deno.env.get('GOOGLE_AI_KEY');
@@ -73,10 +72,19 @@ serve(async (req) => {
       - generatedDescription: string
     `;
 
-    // Skip the prefix if it's a data URL
+    // Ensure the image is in base64 format
     let base64Image = imageData;
     if (imageData.startsWith('data:image')) {
       base64Image = imageData.split(',')[1];
+    } else if (imageData.startsWith('http') || imageData.startsWith('blob:')) {
+      // For URLs or blob URLs, we need to fetch them and convert to base64
+      // This won't work in Deno Edge function directly, but keeping for completeness
+      // The frontend should handle this conversion before sending the image
+      console.error("Image URL or blob URL detected - these should be converted to base64 by the frontend");
+      return new Response(
+        JSON.stringify({ error: 'Image data must be base64 encoded' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const requestBody = {
