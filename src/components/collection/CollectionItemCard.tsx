@@ -80,7 +80,11 @@ const CollectionItemCard: React.FC<CollectionItemCardProps> = ({ item }) => {
         </div>
         
         <div className="mt-2">
-          <PriceEstimateDisplay priceEstimate={item.priceEstimate} />
+          <PriceEstimateDisplay 
+            priceEstimate={item.priceEstimate} 
+            itemName={item.name}
+            itemCategory={item.category}
+          />
         </div>
       </CardContent>
       
