@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useConversation } from '@11labs/react';
-import { MessageCircle, Mic, Volume2, Sparkles, X } from 'lucide-react';
+import { MessageCircle, Mic, X } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 
@@ -12,10 +12,10 @@ const VoiceAssistant = () => {
   
   const conversation = useConversation({
     onMessage: (message) => {
-      if (message.type === 'llm_response') {
-        setMessages(prev => [...prev, { content: message.content, sender: 'assistant' }]);
-      } else if (message.type === 'user_message') {
-        setMessages(prev => [...prev, { content: message.content, sender: 'user' }]);
+      if (message.source === 'agent') {
+        setMessages(prev => [...prev, { content: message.message, sender: 'assistant' }]);
+      } else if (message.source === 'user') {
+        setMessages(prev => [...prev, { content: message.message, sender: 'user' }]);
       }
     },
     onConnect: () => {
@@ -79,7 +79,6 @@ const VoiceAssistant = () => {
         <SheetContent className="w-full sm:max-w-md bg-gray-900 border-gray-700 text-white overflow-hidden">
           <SheetHeader>
             <SheetTitle className="text-white flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-collector-gold" />
               <span className="time-warp-text">Time Warp Assistant</span>
             </SheetTitle>
           </SheetHeader>
@@ -88,7 +87,6 @@ const VoiceAssistant = () => {
             <div className="flex-1 overflow-y-auto mb-4 pr-2 space-y-4">
               {messages.length === 0 ? (
                 <div className="text-center py-8">
-                  <Sparkles className="h-12 w-12 mx-auto text-collector-gold mb-3 animate-pulse-glow" />
                   <p className="text-gray-300">Start a conversation with our collection assistant!</p>
                   <p className="text-sm text-gray-400 mt-2">Ask about collectibles, valuation tips, or how to organize your collection.</p>
                 </div>
