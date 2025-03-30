@@ -19,7 +19,7 @@ import {
 interface CollectionItemActionsProps {
   itemId: string;
   itemName: string;
-  onItemAction?: () => void; // New prop for triggering a refresh
+  onItemAction?: () => void; // Callback for triggering a refresh
 }
 
 const CollectionItemActions: React.FC<CollectionItemActionsProps> = ({ 
@@ -33,10 +33,13 @@ const CollectionItemActions: React.FC<CollectionItemActionsProps> = ({
   
   const handleDelete = async () => {
     try {
+      console.log("Deleting item:", itemId);
       await deleteItem(itemId);
       if (onItemAction) {
+        console.log("Calling onItemAction after deletion");
         onItemAction(); // Call the callback after deletion
       }
+      setIsDeleteDialogOpen(false);
     } catch (error) {
       console.error('Error deleting item:', error);
     }
@@ -44,8 +47,10 @@ const CollectionItemActions: React.FC<CollectionItemActionsProps> = ({
 
   const handleArchive = async () => {
     try {
+      console.log("Archiving item:", itemId);
       await archiveItem(itemId);
       if (onItemAction) {
+        console.log("Calling onItemAction after archiving");
         onItemAction(); // Call the callback after archiving
       }
       setIsArchiveDialogOpen(false);

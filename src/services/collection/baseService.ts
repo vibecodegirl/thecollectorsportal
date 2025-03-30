@@ -18,6 +18,7 @@ export const getCollectionItems = async (userId: string): Promise<CollectionItem
     throw new Error(error.message);
   }
 
+  console.log(`Fetched ${data.length} collection items for user ${userId}`);
   return data.map(transformDatabaseItemToCollectionItem);
 };
 
@@ -100,6 +101,7 @@ export const updateCollectionItem = async (
     throw new Error(error.message);
   }
 
+  console.log("Updated item result:", data);
   return transformDatabaseItemToCollectionItem(data);
 };
 
@@ -110,6 +112,8 @@ export const deleteCollectionItem = async (
   id: string,
   userId: string
 ): Promise<void> => {
+  console.log(`Deleting collection item ${id} for user ${userId}`);
+  
   const { error } = await supabase
     .from("collection_items")
     .delete()
@@ -120,4 +124,6 @@ export const deleteCollectionItem = async (
     console.error("Error deleting collection item", error);
     throw new Error(error.message);
   }
+  
+  console.log(`Successfully deleted item ${id}`);
 };

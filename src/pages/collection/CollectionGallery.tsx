@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useCollection } from '@/contexts/CollectionContext';
@@ -25,28 +24,26 @@ const CollectionGallery = () => {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [filteredItems, setFilteredItems] = useState(collections);
   
-  // Refresh collections when component mounts
   useEffect(() => {
+    console.log("CollectionGallery mounted - refreshing collections");
     refreshCollections();
   }, []);
   
-  // Refresh filtered items when collections change
   useEffect(() => {
+    console.log("Collections or filters changed - applying filters");
     applyFiltersAndSort();
   }, [collections, searchTerm, filterCategory, sortBy, sortOrder, filterStatus]);
   
-  // Get unique categories and ensure none are empty strings
   const uniqueCategories = [...new Set(collections.map(item => item.category || 'Uncategorized'))];
   const categories = ['all', ...uniqueCategories.filter(category => category !== '')];
   
-  // Separated the filtering and sorting logic into its own function
   const applyFiltersAndSort = () => {
-    // Get base collection filtered by status
     let result = filterStatus === 'all' 
       ? collections 
       : collections.filter(item => item.status === filterStatus);
     
-    // Apply search
+    console.log(`Filter status: ${filterStatus}, filtered count: ${result.length}`);
+    
     if (searchTerm) {
       result = result.filter(item => 
         item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -55,12 +52,10 @@ const CollectionGallery = () => {
       );
     }
     
-    // Apply category filter
     if (filterCategory !== 'all') {
       result = result.filter(item => item.category === filterCategory);
     }
     
-    // Apply sorting
     result.sort((a, b) => {
       let comparison = 0;
       
@@ -86,9 +81,8 @@ const CollectionGallery = () => {
     setFilteredItems(result);
   };
   
-  // Callback for when an item is archived or deleted
   const handleItemAction = () => {
-    // Immediately refresh the collection data
+    console.log("Item action detected - refreshing collections");
     refreshCollections();
   };
   
@@ -109,7 +103,6 @@ const CollectionGallery = () => {
   return (
     <MainLayout title="My Collection">
       <div className="container max-w-7xl mx-auto px-4 py-6">
-        {/* Search and filters */}
         <div className="mb-8 space-y-4">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="relative flex-grow">
@@ -191,7 +184,6 @@ const CollectionGallery = () => {
           </div>
         </div>
         
-        {/* Collection items */}
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
@@ -206,7 +198,7 @@ const CollectionGallery = () => {
                 <CollectionItemCard 
                   key={item.id} 
                   item={item} 
-                  onItemAction={handleItemAction} // Pass the action callback
+                  onItemAction={handleItemAction}
                 />
               ))}
             </div>

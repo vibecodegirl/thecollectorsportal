@@ -10,7 +10,7 @@ import CollectionItemActions from './CollectionItemActions';
 
 interface CollectionItemCardProps {
   item: CollectionItem;
-  onItemAction?: () => void; // Added callback for item actions
+  onItemAction?: () => void; // Callback for item actions
 }
 
 const CollectionItemCard: React.FC<CollectionItemCardProps> = ({ item, onItemAction }) => {
