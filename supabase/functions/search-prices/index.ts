@@ -33,9 +33,9 @@ serve(async (req) => {
     const apiKey = Deno.env.get("GOOGLE_SEARCH_API_KEY");
     const cx = Deno.env.get("GOOGLE_SEARCH_CX");
 
-    if (!apiKey) {
+    if (!apiKey || !cx) {
       return new Response(
-        JSON.stringify({ error: "Google Search API key not configured" }),
+        JSON.stringify({ error: "Google Search API configuration is incomplete" }),
         {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -51,7 +51,7 @@ serve(async (req) => {
     // Call the Google Custom Search JSON API
     const searchUrl = new URL("https://www.googleapis.com/customsearch/v1");
     searchUrl.searchParams.append("key", apiKey);
-    searchUrl.searchParams.append("cx", cx || "");  // Custom Search Engine ID
+    searchUrl.searchParams.append("cx", cx);  // Custom Search Engine ID
     searchUrl.searchParams.append("q", enhancedQuery);
     searchUrl.searchParams.append("num", "10");  // Increase results to 10
     

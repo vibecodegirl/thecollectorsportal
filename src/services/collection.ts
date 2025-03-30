@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { CollectionItem, ItemStatus, SaleInfo } from '@/types/collection';
+import { searchItemPrices, getItemPriceEstimate } from './collection/priceService';
 
 // Get all collection items for a user
 export const getCollectionItems = async (userId: string): Promise<CollectionItem[]> => {
@@ -154,21 +155,21 @@ export const analyzeCollectionItem = async (request: {
     // If we have a name or category, search for market prices
     if (mergedData.name || mergedData.category || mergedData.type) {
       try {
-        const searchQuery = [
-          mergedData.name, 
-          mergedData.type, 
-          mergedData.manufacturer, 
-          mergedData.category
-        ].filter(Boolean).join(' ');
+        const priceEstimate = await getItemPriceEstimate({
+          name: mergedData.name, 
+          type: mergedData.type, 
+          manufacturer: mergedData.manufacturer, 
+          yearProduced: mergedData.yearProduced,
+          category: mergedData.category,
+          condition: mergedData.condition
+        });
         
-        const priceData = await searchItemPrices(searchQuery);
-        
-        if (priceData.priceRanges && (priceData.priceRanges.low || priceData.priceRanges.average)) {
+        if (priceEstimate && (priceEstimate.low || priceEstimate.average)) {
           mergedData.priceEstimate = {
-            low: priceData.priceRanges.low || 0,
-            average: priceData.priceRanges.average || 0,
-            high: priceData.priceRanges.high || 0,
-            marketValue: priceData.priceRanges.average || 0
+            low: priceEstimate.low || 0,
+            average: priceEstimate.average || 0,
+            high: priceEstimate.high || 0,
+            marketValue: priceEstimate.average || 0
           };
         }
       } catch (error) {
@@ -225,23 +226,6 @@ export const analyzeImageWithVision = async (imageData: string) => {
     return response.data;
   } catch (error) {
     console.error("Gemini API analysis error:", error);
-    throw error;
-  }
-};
-
-// Search for market prices of an item
-export const searchItemPrices = async (query: string) => {
-  try {
-    console.log("Searching for prices with query:", query);
-    
-    const response = await supabase.functions.invoke('search-prices', {
-      body: { query }
-    });
-    
-    if (response.error) throw response.error;
-    return response.data || { items: [] };
-  } catch (error) {
-    console.error("Price search error:", error);
     throw error;
   }
 };
