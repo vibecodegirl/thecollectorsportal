@@ -10,9 +10,10 @@ import CollectionItemActions from './CollectionItemActions';
 
 interface CollectionItemCardProps {
   item: CollectionItem;
+  onItemAction?: () => void; // Added callback for item actions
 }
 
-const CollectionItemCard: React.FC<CollectionItemCardProps> = ({ item }) => {
+const CollectionItemCard: React.FC<CollectionItemCardProps> = ({ item, onItemAction }) => {
   const defaultImage = 'https://images.unsplash.com/photo-1581092580497-e0d23cbdf1dc?ixlib=rb-1.2.1&auto=format&fit=crop&q=80&w=400&h=300';
   const imageUrl = item.images && item.images.length > 0 ? item.images[0] : defaultImage;
   
@@ -53,7 +54,11 @@ const CollectionItemCard: React.FC<CollectionItemCardProps> = ({ item }) => {
       </CardContent>
       
       <CardFooter className="pt-2 border-t flex justify-between">
-        <CollectionItemActions itemId={item.id} itemName={item.name} />
+        <CollectionItemActions 
+          itemId={item.id} 
+          itemName={item.name} 
+          onItemAction={onItemAction} // Pass the callback
+        />
       </CardFooter>
     </Card>
   );

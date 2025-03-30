@@ -104,7 +104,12 @@ const ItemDetail = () => {
   const handleArchive = async () => {
     try {
       await archiveItem(id);
-      refreshCollections(); // Refresh collections after archiving
+      
+      // After archiving, refresh collections and navigate to archived items
+      refreshCollections();
+      navigate('/collection');
+      
+      // Close the dialog
       setArchiveDialogOpen(false);
     } catch (error) {
       console.error("Error archiving item:", error);
@@ -114,7 +119,11 @@ const ItemDetail = () => {
   const handleMarkAsSold = async () => {
     try {
       await markItemAsSold(id, saleInfo);
-      refreshCollections(); // Refresh collections after marking as sold
+      
+      // After marking as sold, refresh collections
+      refreshCollections();
+      
+      // Close the dialog
       setSellDialogOpen(false);
     } catch (error) {
       console.error("Error marking item as sold:", error);

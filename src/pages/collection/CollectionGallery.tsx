@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useCollection } from '@/contexts/CollectionContext';
@@ -29,11 +30,17 @@ const CollectionGallery = () => {
     refreshCollections();
   }, []);
   
+  // Refresh filtered items when collections change
+  useEffect(() => {
+    applyFiltersAndSort();
+  }, [collections, searchTerm, filterCategory, sortBy, sortOrder, filterStatus]);
+  
   // Get unique categories and ensure none are empty strings
   const uniqueCategories = [...new Set(collections.map(item => item.category || 'Uncategorized'))];
   const categories = ['all', ...uniqueCategories.filter(category => category !== '')];
   
-  useEffect(() => {
+  // Separated the filtering and sorting logic into its own function
+  const applyFiltersAndSort = () => {
     // Get base collection filtered by status
     let result = filterStatus === 'all' 
       ? collections 
@@ -77,7 +84,13 @@ const CollectionGallery = () => {
     });
     
     setFilteredItems(result);
-  }, [collections, searchTerm, filterCategory, sortBy, sortOrder, filterStatus]);
+  };
+  
+  // Callback for when an item is archived or deleted
+  const handleItemAction = () => {
+    // Immediately refresh the collection data
+    refreshCollections();
+  };
   
   const toggleSortOrder = () => {
     setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
@@ -190,7 +203,11 @@ const CollectionGallery = () => {
             <h2 className="text-xl font-semibold mb-4">{getStatusName(filterStatus)}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {filteredItems.map(item => (
-                <CollectionItemCard key={item.id} item={item} />
+                <CollectionItemCard 
+                  key={item.id} 
+                  item={item} 
+                  onItemAction={handleItemAction} // Pass the action callback
+                />
               ))}
             </div>
           </>
