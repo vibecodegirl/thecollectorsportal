@@ -33,9 +33,10 @@ serve(async (req) => {
     
     console.log("Sending request to Gemini API");
     
+    // Use Gemini 2.5 Pro Experimental API
     const geminiApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent?key=${geminiApiKey}`;
     
-    // Custom prompt to extract detailed information about collectible items
+    // Custom prompt for collectible item analysis
     const analyzePrompt = `
       Analyze this image of a collectible item in detail. 
       I need structured information about the item for a collector's database.
