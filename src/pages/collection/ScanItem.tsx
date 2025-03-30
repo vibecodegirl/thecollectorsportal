@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
@@ -243,13 +244,18 @@ const ScanItem = () => {
     setSaving(true);
     
     try {
+      // Create a filtered item object that removes properties that might cause issues
+      const { autoSaved, ...cleanedItemData } = editableItem as any;
+      
       const itemData: Partial<CollectionItem> = {
-        ...editableItem,
+        ...cleanedItemData,
         userId: user.id,
         images,
         name: editableItem.name || itemName,
         category: editableItem.category || category
       };
+      
+      console.log("Sending item data to addItem:", JSON.stringify(itemData, null, 2));
       
       const newItem = await addItem(itemData as CollectionItem);
       
@@ -263,11 +269,11 @@ const ScanItem = () => {
       });
       
       navigateToGallery();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving item:", error);
       toast({
         title: "Error saving item",
-        description: "There was an error adding the item to your collection",
+        description: error.message || "There was an error adding the item to your collection",
         variant: "destructive",
       });
     } finally {

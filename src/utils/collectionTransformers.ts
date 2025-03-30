@@ -93,31 +93,44 @@ export const transformCollectionItemToDatabase = (item: Partial<CollectionItem>,
   // Calculate the estimated value as the market value from price estimates if available
   const estimatedValue = item.priceEstimate?.marketValue || 0;
   
-  // Remove autoSaved property if it exists to prevent database errors
-  const { autoSaved, ...cleanedItem } = item as any;
+  // Clean up properties that don't exist in the database schema
+  const {
+    autoSaved,
+    primaryObject,
+    confidenceScore,
+    priceEstimate,
+    saleInfo,
+    videos,
+    images,
+    status,
+    dateAdded,
+    lastUpdated,
+    ...rest
+  } = item as any;
   
+  // Construct the database object with the correct field mappings
   return {
-    user_id: userId || cleanedItem.userId,
-    name: cleanedItem.name || '',
-    description: cleanedItem.notes,
-    category: cleanedItem.category,
-    condition: cleanedItem.condition,
+    user_id: userId || rest.userId,
+    name: rest.name || '',
+    description: rest.notes,
+    category: rest.category,
+    condition: rest.condition,
     estimated_value: estimatedValue,
-    image_url: cleanedItem.images && cleanedItem.images.length > 0 ? cleanedItem.images[0] : null,
+    image_url: images && images.length > 0 ? images[0] : null,
     acquisition_date: null,
-    type: cleanedItem.type,
-    manufacturer: cleanedItem.manufacturer,
-    year_produced: cleanedItem.yearProduced,
-    edition: cleanedItem.edition,
-    model_number: cleanedItem.modelNumber,
-    unique_identifiers: cleanedItem.uniqueIdentifiers,
-    flaws: cleanedItem.flaws,
-    completeness: cleanedItem.completeness,
-    acquisition_source: cleanedItem.acquisitionSource,
-    previous_owners: cleanedItem.previousOwners,
-    documentation: cleanedItem.documentation,
-    dimensions: cleanedItem.dimensions,
-    weight: cleanedItem.weight,
-    rarity: cleanedItem.rarity
+    type: rest.type,
+    manufacturer: rest.manufacturer,
+    year_produced: rest.yearProduced,
+    edition: rest.edition,
+    model_number: rest.modelNumber,
+    unique_identifiers: rest.uniqueIdentifiers,
+    flaws: rest.flaws,
+    completeness: rest.completeness,
+    acquisition_source: rest.acquisitionSource,
+    previous_owners: rest.previousOwners,
+    documentation: rest.documentation,
+    dimensions: rest.dimensions,
+    weight: rest.weight,
+    rarity: rest.rarity
   };
 };
