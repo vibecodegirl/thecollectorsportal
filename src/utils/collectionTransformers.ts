@@ -29,7 +29,7 @@ export const transformDatabaseItemToCollectionItem = (
     previousOwners: item.previous_owners || '',
     documentation: item.documentation || '',
     images: item.image_url ? [item.image_url] : [],
-    videos: [], // Added empty videos array as default
+    videos: [],
     dimensions: item.dimensions || '',
     weight: item.weight || '',
     rarity: item.rarity || '',

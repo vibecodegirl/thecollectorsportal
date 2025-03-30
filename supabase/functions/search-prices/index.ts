@@ -34,16 +34,10 @@ serve(async (req) => {
     const cx = Deno.env.get("GOOGLE_SEARCH_CX");
 
     if (!apiKey || !cx) {
-      console.error("Google Search API configuration is incomplete");
       return new Response(
-        JSON.stringify({ 
-          error: "Google Search API configuration is incomplete",
-          items: [],
-          priceRanges: { low: null, average: null, high: null, count: 0 },
-          marketplace: []
-        }),
+        JSON.stringify({ error: "Google Search API configuration is incomplete" }),
         {
-          status: 200, // Return 200 instead of 500 to avoid client-side errors
+          status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         }
       );
@@ -69,15 +63,9 @@ serve(async (req) => {
       const errorText = await response.text();
       console.error(`Google Search API error: ${errorText}`);
       return new Response(
-        JSON.stringify({ 
-          error: "Failed to search for prices", 
-          details: errorText,
-          items: [],
-          priceRanges: { low: null, average: null, high: null, count: 0 },
-          marketplace: []
-        }),
+        JSON.stringify({ error: "Failed to search for prices", details: errorText }),
         {
-          status: 200, // Return 200 instead of 500 to avoid client-side errors
+          status: response.status,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         }
       );
@@ -105,14 +93,9 @@ serve(async (req) => {
   } catch (error) {
     console.error("Error in search-prices function:", error);
     return new Response(
-      JSON.stringify({ 
-        error: error.message,
-        items: [],
-        priceRanges: { low: null, average: null, high: null, count: 0 },
-        marketplace: []
-      }),
+      JSON.stringify({ error: error.message }),
       {
-        status: 200, // Return 200 instead of 500 to avoid client-side errors
+        status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );

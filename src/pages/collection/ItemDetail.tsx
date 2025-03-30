@@ -69,7 +69,6 @@ const ItemDetail = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   
   const [saleInfo, setSaleInfo] = useState<SaleInfo>({
-    saleDate: new Date().toISOString(), // Added saleDate with current date
     salePrice: 0,
     buyer: '',
     saleNotes: ''

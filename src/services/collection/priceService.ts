@@ -30,18 +30,12 @@ export const searchItemPrices = async (query: string): Promise<SearchResult> => 
       body: { query: enhancedQuery }
     });
 
-    if (response.error) {
-      console.error("Supabase function error:", response.error);
-      throw new Error(`Error calling search-prices: ${response.error.message}`);
-    }
+    if (response.error) throw response.error;
     
     const data = response.data;
     if (!data) {
-      console.log("No data returned from search-prices function");
       return { items: [] };
     }
-    
-    console.log("Search results:", data);
     
     const items = Array.isArray(data.items) 
       ? data.items.map((item: any) => ({
@@ -138,8 +132,6 @@ export const getItemPriceEstimate = async (item: {
     if (item.condition) {
       searchQuery += ` ${item.condition} condition`;
     }
-    
-    console.log("Searching for prices with query:", searchQuery);
     
     // Conduct the search
     const result = await searchItemPrices(searchQuery);

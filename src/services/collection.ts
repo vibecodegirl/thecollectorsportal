@@ -2,7 +2,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { CollectionItem, ItemStatus, SaleInfo } from '@/types/collection';
 import { searchItemPrices, getItemPriceEstimate } from './collection/priceService';
-import { transformDatabaseItemToCollectionItem } from '@/utils/collectionTransformers';
 
 // Get all collection items for a user
 export const getCollectionItems = async (userId: string): Promise<CollectionItem[]> => {
@@ -13,9 +12,7 @@ export const getCollectionItems = async (userId: string): Promise<CollectionItem
       .eq('user_id', userId);
     
     if (error) throw error;
-    
-    // Transform database items to CollectionItems
-    return (data || []).map(item => transformDatabaseItemToCollectionItem(item));
+    return data || [];
   } catch (error: any) {
     console.error('Error fetching collection items:', error);
     throw new Error(error.message || 'Failed to fetch collection items');
@@ -43,7 +40,7 @@ export const createCollectionItem = async (
       .single();
     
     if (error) throw error;
-    return transformDatabaseItemToCollectionItem(data);
+    return data;
   } catch (error: any) {
     console.error('Error creating collection item:', error);
     throw new Error(error.message || 'Failed to create collection item');
@@ -72,7 +69,7 @@ export const updateCollectionItem = async (
       .single();
     
     if (error) throw error;
-    return transformDatabaseItemToCollectionItem(data);
+    return data;
   } catch (error: any) {
     console.error('Error updating collection item:', error);
     throw new Error(error.message || 'Failed to update collection item');
