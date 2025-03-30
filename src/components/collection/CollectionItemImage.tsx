@@ -16,6 +16,7 @@ interface CollectionItemImageProps {
       dominant?: string;
       accents?: string | string[];
     };
+    function?: string;
   };
 }
 

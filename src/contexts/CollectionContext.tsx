@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { CollectionItem, ItemStatus, SaleInfo } from '../types/collection';
 import { useAuth } from './AuthContext';
@@ -47,10 +46,28 @@ export interface VisionAnalysisResult {
     timePeriod?: string;
     possibleFunctions?: string[];
     style?: string;
+    function?: string;
   };
   additionalObservations: string;
   suggestedCategory?: string;
   suggestedType?: string;
+  condition?: string;
+  rarity?: string;
+  yearProduced?: string;
+  generatedDescription?: string;
+  identifiers?: {
+    modelNumber?: string;
+    extractedText?: string[];
+  };
+  manufacturerInfo?: {
+    suggestedBrand?: string;
+    detectedLogos?: string[];
+  };
+  webInfo?: {
+    bestGuess?: string;
+    webEntities?: string[];
+    similarProducts?: string[];
+  };
 }
 
 const CollectionContext = createContext<CollectionContextType | undefined>(undefined);

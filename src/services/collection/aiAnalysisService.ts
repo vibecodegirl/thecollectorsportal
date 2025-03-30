@@ -132,7 +132,9 @@ const combineAnalysisData = async (
     // If we have identifying features, add them to uniqueIdentifiers
     if (visionData.primaryObject.distinguishingFeatures && visionData.primaryObject.distinguishingFeatures.length > 0) {
       combined.uniqueIdentifiers = combined.uniqueIdentifiers || 
-        visionData.primaryObject.distinguishingFeatures.join("; ");
+        (typeof visionData.primaryObject.distinguishingFeatures === 'string' 
+          ? visionData.primaryObject.distinguishingFeatures 
+          : visionData.primaryObject.distinguishingFeatures.join("; "));
     }
     
     // Add more detailed notes
@@ -144,7 +146,12 @@ const combineAnalysisData = async (
     
     // Fill in primary object data
     if (!combined.primaryObject) {
-      combined.primaryObject = visionData.primaryObject;
+      combined.primaryObject = {
+        ...visionData.primaryObject,
+        function: visionData.primaryObject.function || 
+                (visionData.primaryObject.possibleFunctions && visionData.primaryObject.possibleFunctions.length > 0 
+                 ? visionData.primaryObject.possibleFunctions[0] : "Unknown")
+      };
     } else {
       // Merge primaryObject data preferring Vision AI data
       combined.primaryObject = {
@@ -157,7 +164,7 @@ const combineAnalysisData = async (
                                visionData.primaryObject.distinguishingFeatures,
         style: combined.primaryObject.style || visionData.primaryObject.style,
         timePeriod: combined.primaryObject.timePeriod || visionData.primaryObject.timePeriod,
-        function: combined.primaryObject.function || 
+        function: combined.primaryObject.function || visionData.primaryObject.function ||
                  (visionData.primaryObject.possibleFunctions && visionData.primaryObject.possibleFunctions.length > 0 
                   ? visionData.primaryObject.possibleFunctions[0] : "Unknown")
       };
