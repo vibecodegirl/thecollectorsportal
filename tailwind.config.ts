@@ -64,11 +64,15 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				},
 				collector: {
-					navy: "#1A365D",
-					gold: "#C6A45C",
+					navy: "#193566",
+					gold: "#D4AF37",
 					light: "#F8F9FA",
 					dark: "#2D3748",
 					accent: "#4A5568",
+					purple: "#8B5CF6",
+					cyan: "#0EA5E9",
+					magenta: "#D946EF",
+					orange: "#F97316",
 				}
 			},
 			borderRadius: {
@@ -100,12 +104,30 @@ export default {
 					'50%': {
 						opacity: '0.8'
 					}
+				},
+				'float': {
+					'0%, 100%': {
+						transform: 'translateY(0)'
+					},
+					'50%': {
+						transform: 'translateY(-20px)'
+					}
+				},
+				'gradient-shift': {
+					'0%, 100%': {
+						backgroundPosition: '0% 50%'
+					},
+					'50%': {
+						backgroundPosition: '100% 50%'
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
-				'pulse-subtle': 'pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+				'pulse-subtle': 'pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+				'float': 'float 6s ease-in-out infinite',
+				'gradient-shift': 'gradient-shift 15s ease infinite'
 			}
 		}
 	},
