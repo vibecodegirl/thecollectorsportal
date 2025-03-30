@@ -146,24 +146,31 @@ const combineAnalysisData = async (
     
     // Fill in primary object data
     if (!combined.primaryObject) {
+      // Ensure all required fields have default values
       combined.primaryObject = {
-        ...visionData.primaryObject,
+        shape: visionData.primaryObject.shape || "Unknown",
+        colors: visionData.primaryObject.colors || { dominant: "Unknown", accents: [] },
+        texture: visionData.primaryObject.texture || "Unknown",
+        material: visionData.primaryObject.material || "Unknown",
+        distinguishingFeatures: visionData.primaryObject.distinguishingFeatures || [],
+        style: visionData.primaryObject.style || "Unknown", // Ensure style is always provided
+        timePeriod: visionData.primaryObject.timePeriod || "Unknown",
         function: visionData.primaryObject.function || 
-                (visionData.primaryObject.possibleFunctions && visionData.primaryObject.possibleFunctions.length > 0 
-                 ? visionData.primaryObject.possibleFunctions[0] : "Unknown")
+                  (visionData.primaryObject.possibleFunctions && visionData.primaryObject.possibleFunctions.length > 0 
+                   ? visionData.primaryObject.possibleFunctions[0] : "Unknown")
       };
     } else {
       // Merge primaryObject data preferring Vision AI data
       combined.primaryObject = {
         ...combined.primaryObject,
-        shape: combined.primaryObject.shape || visionData.primaryObject.shape,
-        colors: combined.primaryObject.colors || visionData.primaryObject.colors,
-        texture: combined.primaryObject.texture || visionData.primaryObject.texture,
-        material: combined.primaryObject.material || visionData.primaryObject.material,
+        shape: combined.primaryObject.shape || visionData.primaryObject.shape || "Unknown",
+        colors: combined.primaryObject.colors || visionData.primaryObject.colors || { dominant: "Unknown", accents: [] },
+        texture: combined.primaryObject.texture || visionData.primaryObject.texture || "Unknown",
+        material: combined.primaryObject.material || visionData.primaryObject.material || "Unknown",
         distinguishingFeatures: combined.primaryObject.distinguishingFeatures || 
-                               visionData.primaryObject.distinguishingFeatures,
-        style: combined.primaryObject.style || visionData.primaryObject.style,
-        timePeriod: combined.primaryObject.timePeriod || visionData.primaryObject.timePeriod,
+                               visionData.primaryObject.distinguishingFeatures || [],
+        style: combined.primaryObject.style || visionData.primaryObject.style || "Unknown", // Ensure style is always provided
+        timePeriod: combined.primaryObject.timePeriod || visionData.primaryObject.timePeriod || "Unknown",
         function: combined.primaryObject.function || visionData.primaryObject.function ||
                  (visionData.primaryObject.possibleFunctions && visionData.primaryObject.possibleFunctions.length > 0 
                   ? visionData.primaryObject.possibleFunctions[0] : "Unknown")
