@@ -43,10 +43,10 @@ export interface VisionAnalysisResult {
     texture: string;
     material: string;
     distinguishingFeatures: string[];
-    timePeriod?: string;
+    timePeriod: string;
     possibleFunctions?: string[];
-    style?: string;
-    function?: string;
+    style: string;
+    function: string;
   };
   additionalObservations: string;
   suggestedCategory?: string;

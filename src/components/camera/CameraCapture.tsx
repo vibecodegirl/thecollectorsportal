@@ -1,3 +1,4 @@
+
 import React, { useRef, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Camera, SwitchCamera, Ban, ImageDown, Loader2 } from 'lucide-react';
@@ -92,6 +93,7 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose }) => 
         // Analyze the image with Google Vision AI
         try {
           const analysis = await analyzeImage(imageSrc);
+          console.log("Vision analysis result:", analysis);
           onCapture(imageSrc, analysis);
         } catch (error) {
           console.error("Error analyzing image:", error);

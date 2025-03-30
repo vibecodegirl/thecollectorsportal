@@ -1,97 +1,73 @@
 
-export type PriceEstimate = {
+export type ItemStatus = 'active' | 'archived' | 'sold';
+
+export interface PriceEstimate {
   low: number;
   average: number;
   high: number;
   marketValue: number;
-};
+}
 
-export type ConfidenceScore = {
-  score: number; // 0-100
+export interface ConfidenceScore {
+  score: number;
   level: 'low' | 'medium' | 'high';
-};
+}
 
-export type PrimaryObject = {
+export interface SaleInfo {
+  saleDate: string;
+  salePrice: number;
+  saleCurrency?: string;
+  salePlatform?: string;
+  saleFees?: number;
+  saleNotes?: string;
+  buyerInfo?: string;
+}
+
+export interface PrimaryObject {
   shape: string;
   colors: {
     dominant: string;
-    accents: string | string[];
+    accents: string[];
   };
   texture: string;
   material: string;
-  distinguishingFeatures: string | string[];
+  distinguishingFeatures: string[];
   style: string;
   timePeriod: string;
   function: string;
-  condition?: string;
   possibleFunctions?: string[];
-};
+}
 
-// Define a status enum for collection items
-export type ItemStatus = 'active' | 'archived' | 'sold';
-
-export type SaleInfo = {
-  saleDate?: string;
-  salePrice?: number;
-  buyer?: string;
-  saleNotes?: string;
-};
-
-export type CollectionItem = {
+export interface CollectionItem {
   id: string;
   userId: string;
+  name: string;
+  category?: string;
+  type?: string;
+  manufacturer?: string;
+  yearProduced?: string;
+  edition?: string;
+  modelNumber?: string;
+  uniqueIdentifiers?: string;
+  condition?: string;
+  flaws?: string;
+  completeness?: string;
+  acquisitionDate?: string;
+  acquisitionPrice?: number;
+  acquisitionCurrency?: string;
+  acquisitionSource?: string;
+  previousOwners?: string;
+  documentation?: string;
+  dimensions?: string;
+  weight?: string;
+  rarity?: string;
+  notes?: string;
+  images?: string[];
+  status: ItemStatus;
   dateAdded: string;
   lastUpdated: string;
-  
-  // Status
-  status: ItemStatus;
+  priceEstimate?: PriceEstimate;
+  confidenceScore?: ConfidenceScore;
   saleInfo?: SaleInfo;
-  
-  // Category
-  category: string;
-  
-  // Item Identification
-  name: string;
-  type: string;
-  manufacturer: string;
-  yearProduced: string;
-  edition: string;
-  modelNumber: string;
-  uniqueIdentifiers: string;
-  
-  // Collection Details
-  condition: string;
-  flaws: string;
-  completeness: string;
-  
-  // Provenance/History
-  acquisitionSource: string;
-  previousOwners: string;
-  documentation: string;
-  
-  // Media
-  images: string[];
-  videos: string[];
-  
-  // Physical Attributes
-  dimensions: string;
-  weight: string;
-  
-  // Rarity/Value Information
-  rarity: string;
-  priceEstimate: PriceEstimate;
-  confidenceScore: ConfidenceScore;
-  
-  // AI Analysis Data
-  primaryObject: PrimaryObject;
-  
-  // Notes
-  notes: string;
-};
-
-export type User = {
-  id: string;
-  email: string;
-  name: string;
-  collections: CollectionItem[];
-};
+  primaryObject?: PrimaryObject;
+}

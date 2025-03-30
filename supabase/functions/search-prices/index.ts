@@ -30,7 +30,7 @@ serve(async (req) => {
     }
 
     // Get Google Search API key from environment variable
-    const apiKey = Deno.env.get("Google_Search");
+    const apiKey = Deno.env.get("GOOGLE_SEARCH_API_KEY");
     const cx = Deno.env.get("GOOGLE_SEARCH_CX");
 
     if (!apiKey) {
@@ -45,11 +45,14 @@ serve(async (req) => {
 
     console.log(`Searching for prices with query: ${query}`);
     
+    // Enhanced search query for better price results
+    const enhancedQuery = `${query} price value for sale collectible`;
+    
     // Call the Google Custom Search JSON API
     const searchUrl = new URL("https://www.googleapis.com/customsearch/v1");
     searchUrl.searchParams.append("key", apiKey);
     searchUrl.searchParams.append("cx", cx || "");  // Custom Search Engine ID
-    searchUrl.searchParams.append("q", query);
+    searchUrl.searchParams.append("q", enhancedQuery);
     searchUrl.searchParams.append("num", "10");  // Increase results to 10
     
     console.log(`Making request to Google Search API: ${searchUrl.toString()}`);

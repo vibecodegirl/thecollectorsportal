@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const googleVisionApiKey = Deno.env.get('GOOGLE_VISION_API_KEY');
@@ -28,8 +27,7 @@ serve(async (req) => {
       );
     }
 
-    // Process only the first image for demo purposes
-    // In production, you might want to process all images and combine results
+    // Process only the first image for now
     const imageData = images[0];
     
     // Skip the prefix if it's a data URL
@@ -78,7 +76,7 @@ serve(async (req) => {
     const data = await response.json();
     console.log("Received response from Google Vision API");
     
-    // Process the response to extract useful information
+    // Process the response
     const processedResults = processVisionResults(data);
     
     return new Response(
@@ -344,9 +342,10 @@ function processVisionResults(data: any) {
       texture: detectedMaterial ? `${detectedMaterial} texture` : "Unknown texture",
       material: detectedMaterial || "Unknown material",
       distinguishingFeatures: extractedText ? extractedText.split('\n').filter((line: string) => line.trim().length > 0).slice(0, 3) : [],
-      timePeriod: detectedPeriod || undefined,
+      timePeriod: detectedPeriod || "Unknown",
       possibleFunctions: detectedObjects.map((obj: any) => obj.name),
-      style: detectedStyle || undefined
+      style: detectedStyle || "Unknown",
+      function: detectedObjects.length > 0 ? detectedObjects[0].name : "Unknown"
     },
     identifiers: {
       modelNumber: modelNumber,
