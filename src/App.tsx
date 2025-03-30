@@ -21,6 +21,7 @@ import CollectionGallery from "./pages/collection/CollectionGallery";
 import ItemDetail from "./pages/collection/ItemDetail";
 import AddEditItem from "./pages/collection/AddEditItem";
 import ScanItem from "./pages/collection/ScanItem";
+import Judges from "./pages/Judges";
 
 const queryClient = new QueryClient();
 
@@ -43,6 +44,11 @@ const App = () => (
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/judges" element={
+              <ProtectedRoute>
+                <Judges />
               </ProtectedRoute>
             } />
             
