@@ -142,7 +142,19 @@ const ScanItem = () => {
         scanResult.yearProduced = scanResult.yearProduced || imageAnalysis.primaryObject.timePeriod || "Unknown";
         
         if (imageAnalysis.primaryObject.material && imageAnalysis.primaryObject.material !== "Unknown material") {
-          scanResult.primaryObject = scanResult.primaryObject || {};
+          scanResult.primaryObject = scanResult.primaryObject || {
+            shape: "Unknown",
+            colors: {
+              dominant: "Unknown",
+              accents: []
+            },
+            texture: "Unknown",
+            material: "Unknown",
+            distinguishingFeatures: [],
+            style: "Unknown",
+            timePeriod: "Unknown",
+            function: "Unknown"
+          };
           scanResult.primaryObject.material = imageAnalysis.primaryObject.material;
         }
       }
