@@ -1,13 +1,13 @@
 
-import { supabaseClient } from "@/integrations/supabase/client";
-import { CollectionItem, CollectionItemCreate, CollectionItemUpdate } from "@/types/collection";
-import { transformCollectionItemFromDatabase, transformCollectionItemToDatabase } from "@/utils/collectionTransformers";
+import { supabase } from "@/integrations/supabase/client";
+import { CollectionItem } from "@/types/collection";
+import { transformDatabaseItemToCollectionItem, transformCollectionItemToDatabase } from "@/utils/collectionTransformers";
 
 /**
  * Get all collection items for a user
  */
 export const getCollectionItems = async (userId: string): Promise<CollectionItem[]> => {
-  const { data, error } = await supabaseClient
+  const { data, error } = await supabase
     .from("collection_items")
     .select("*")
     .eq("user_id", userId)
@@ -18,7 +18,7 @@ export const getCollectionItems = async (userId: string): Promise<CollectionItem
     throw new Error(error.message);
   }
 
-  return data.map(transformCollectionItemFromDatabase);
+  return data.map(transformDatabaseItemToCollectionItem);
 };
 
 /**
@@ -28,7 +28,7 @@ export const getCollectionItemById = async (
   itemId: string,
   userId: string
 ): Promise<CollectionItem | null> => {
-  const { data, error } = await supabaseClient
+  const { data, error } = await supabase
     .from("collection_items")
     .select("*")
     .eq("id", itemId)
@@ -43,19 +43,19 @@ export const getCollectionItemById = async (
     throw new Error(error.message);
   }
 
-  return transformCollectionItemFromDatabase(data);
+  return transformDatabaseItemToCollectionItem(data);
 };
 
 /**
  * Create a new collection item
  */
 export const createCollectionItem = async (
-  item: CollectionItemCreate,
+  item: Partial<CollectionItem>,
   userId: string
 ): Promise<CollectionItem> => {
   const dbItem = transformCollectionItemToDatabase(item, userId);
 
-  const { data, error } = await supabaseClient
+  const { data, error } = await supabase
     .from("collection_items")
     .insert(dbItem)
     .select()
@@ -66,7 +66,7 @@ export const createCollectionItem = async (
     throw new Error(error.message);
   }
 
-  return transformCollectionItemFromDatabase(data);
+  return transformDatabaseItemToCollectionItem(data);
 };
 
 /**
@@ -74,12 +74,12 @@ export const createCollectionItem = async (
  */
 export const updateCollectionItem = async (
   id: string,
-  item: CollectionItemUpdate,
+  item: Partial<CollectionItem>,
   userId: string
 ): Promise<CollectionItem> => {
   const dbItem = transformCollectionItemToDatabase({ ...item, id }, userId);
 
-  const { data, error } = await supabaseClient
+  const { data, error } = await supabase
     .from("collection_items")
     .update(dbItem)
     .eq("id", id)
@@ -92,7 +92,7 @@ export const updateCollectionItem = async (
     throw new Error(error.message);
   }
 
-  return transformCollectionItemFromDatabase(data);
+  return transformDatabaseItemToCollectionItem(data);
 };
 
 /**
@@ -102,7 +102,7 @@ export const deleteCollectionItem = async (
   id: string,
   userId: string
 ): Promise<void> => {
-  const { error } = await supabaseClient
+  const { error } = await supabase
     .from("collection_items")
     .delete()
     .eq("id", id)

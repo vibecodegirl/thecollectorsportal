@@ -3,8 +3,8 @@ import { CollectionItem, ItemStatus, SaleInfo } from '../types/collection';
 import { useAuth } from './AuthContext';
 import { useToast } from '@/components/ui/use-toast';
 import {
-  fetchCollectionItems,
-  addCollectionItem,
+  getCollectionItems,
+  createCollectionItem,
   updateCollectionItem,
   deleteCollectionItem,
   analyzeCollectionItem,
@@ -74,7 +74,7 @@ export const CollectionProvider = ({ children }: { children: ReactNode }) => {
     
     setLoading(true);
     try {
-      const items = await fetchCollectionItems(user.id);
+      const items = await getCollectionItems(user.id);
       const itemsWithStatus = items.map(item => ({
         ...item,
         status: item.status || 'active' as ItemStatus
@@ -108,7 +108,7 @@ export const CollectionProvider = ({ children }: { children: ReactNode }) => {
         status: 'active' as ItemStatus
       };
       
-      const newItem = await addCollectionItem(itemWithStatus, user.id);
+      const newItem = await createCollectionItem(itemWithStatus, user.id);
       setCollections(prev => [...prev, newItem]);
       
       toast({
@@ -131,7 +131,7 @@ export const CollectionProvider = ({ children }: { children: ReactNode }) => {
     try {
       if (!user) throw new Error('User must be logged in to update items');
       
-      const updatedItem = await updateCollectionItem(item);
+      const updatedItem = await updateCollectionItem(item.id, item, user.id);
       
       setCollections(prev => 
         prev.map(i => i.id === updatedItem.id ? updatedItem : i)
