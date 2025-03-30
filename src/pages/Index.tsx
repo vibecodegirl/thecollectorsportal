@@ -50,12 +50,20 @@ const Index = () => {
             </div>
             <div className="hidden md:block">
               <div className="relative">
-                <div className="relative z-10 bg-collector-navy/80 backdrop-blur-md rounded-lg p-8 border-2 border-collector-cyan shadow-xl flex items-center justify-center">
-                  <div className="relative w-48 h-48 flex items-center justify-center">
-                    <Package className="w-28 h-28 text-collector-cyan absolute" style={{ top: '10%', left: '10%' }} />
-                    <Award className="w-16 h-16 text-collector-purple absolute z-20" style={{ bottom: '20%', right: '15%' }} />
-                    <Gem className="w-20 h-20 text-collector-magenta absolute z-20" style={{ top: '15%', right: '20%' }} />
-                    <Star className="w-12 h-12 text-collector-orange absolute z-20" style={{ bottom: '15%', left: '25%' }}/>
+                <div className="relative z-10 bg-collector-navy/80 backdrop-blur-md rounded-lg p-8 border-2 border-collector-cyan shadow-xl">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-white/10 p-4 rounded-lg flex items-center justify-center">
+                      <Trophy className="w-16 h-16 text-collector-gold animate-pulse-subtle" />
+                    </div>
+                    <div className="bg-white/10 p-4 rounded-lg flex items-center justify-center">
+                      <Gem className="w-16 h-16 text-collector-magenta animate-pulse-subtle" />
+                    </div>
+                    <div className="bg-white/10 p-4 rounded-lg flex items-center justify-center">
+                      <Award className="w-16 h-16 text-collector-cyan animate-pulse-subtle" />
+                    </div>
+                    <div className="bg-white/10 p-4 rounded-lg flex items-center justify-center">
+                      <Star className="w-16 h-16 text-collector-orange animate-pulse-subtle" />
+                    </div>
                   </div>
                 </div>
                 <div className="absolute -top-8 -right-8 h-24 w-24 animate-float" style={{ animationDelay: "1.5s" }}>

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
@@ -64,7 +65,10 @@ const CollectionItemActions: React.FC<CollectionItemActionsProps> = ({
       <div className="flex gap-1">
         <AlertDialog open={isArchiveDialogOpen} onOpenChange={setIsArchiveDialogOpen}>
           <AlertDialogTrigger asChild>
-            
+            <Button variant="ghost" size="sm" className="text-amber-600">
+              <Archive className="mr-1 h-4 w-4" />
+              Archive
+            </Button>
           </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>
