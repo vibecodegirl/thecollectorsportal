@@ -36,6 +36,7 @@ const ScanItem = () => {
   const [scanning, setScanning] = useState(false);
   const [saving, setSaving] = useState(false);
   const [images, setImages] = useState<string[]>([]);
+  const [imageBlobs, setImageBlobs] = useState<Blob[]>([]);
   const [itemName, setItemName] = useState('');
   const [category, setCategory] = useState('');
   const [scanResults, setScanResults] = useState<Partial<CollectionItem> | null>(null);
@@ -44,6 +45,7 @@ const ScanItem = () => {
   const [imageAnalysis, setImageAnalysis] = useState<VisionAnalysisResult | null>(null);
   const [imageSearchResults, setImageSearchResults] = useState<any | null>(null);
   const [isCameraSupported, setIsCameraSupported] = useState<boolean | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   
   React.useEffect(() => {
     const checkCameraSupport = async () => {
@@ -73,12 +75,68 @@ const ScanItem = () => {
     checkCameraSupport();
   }, []);
   
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const blobToBase64 = (blob: Blob): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  };
+  
+  const urlToBase64 = async (url: string): Promise<string> => {
+    if (url.startsWith('data:')) {
+      return url;
+    }
+    
+    const response = await fetch(url);
+    const blob = await response.blob();
+    return blobToBase64(blob);
+  };
+  
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
     
-    const newImages = Array.from(files).map(file => URL.createObjectURL(file));
-    setImages(prevImages => [...prevImages, ...newImages]);
+    setIsAnalyzing(true);
+    
+    try {
+      const newImageBlobs: Blob[] = [];
+      const newImageUrls: string[] = [];
+      
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const blob = new Blob([file], { type: file.type });
+        newImageBlobs.push(blob);
+        
+        const base64 = await blobToBase64(blob);
+        newImageUrls.push(base64);
+      }
+      
+      setImageBlobs(prevBlobs => [...prevBlobs, ...newImageBlobs]);
+      setImages(prevImages => [...prevImages, ...newImageUrls]);
+      
+      if (images.length === 0 && newImageUrls.length > 0) {
+        setTimeout(() => {
+          analyzeImages(newImageUrls[0]);
+        }, 100);
+      } else {
+        setIsAnalyzing(false);
+      }
+      
+      toast({
+        title: "Images uploaded",
+        description: `${files.length} image${files.length > 1 ? 's' : ''} uploaded successfully`,
+      });
+    } catch (error) {
+      console.error("Error processing uploaded images:", error);
+      toast({
+        variant: "destructive",
+        title: "Upload failed",
+        description: "There was an error processing your images",
+      });
+      setIsAnalyzing(false);
+    }
   };
   
   const handleCameraCapture = (imageSrc: string, analysisResult?: any) => {
@@ -106,13 +164,20 @@ const ScanItem = () => {
   
   const removeImage = (index: number) => {
     setImages(images.filter((_, i) => i !== index));
+    setImageBlobs(imageBlobs.filter((_, i) => i !== index));
   };
   
-  const analyzeImages = async () => {
-    if (images.length > 0 && images[0]) {
+  const analyzeImages = async (specificImage?: string) => {
+    const imageToAnalyze = specificImage || (images.length > 0 ? images[0] : null);
+    
+    if (imageToAnalyze) {
       setScanning(true);
+      setIsAnalyzing(true);
+      
       try {
-        const imageBase64 = images[0].split(',')[1];
+        const base64Image = await urlToBase64(imageToAnalyze);
+        const imageBase64 = base64Image.split(',')[1];
+        
         const searchResults = await searchByImage(imageBase64);
         
         if (!searchResults.error) {
@@ -132,7 +197,7 @@ const ScanItem = () => {
           });
         }
         
-        const analysis = await analyzeImage(images[0]);
+        const analysis = await analyzeImage(base64Image);
         setImageAnalysis(analysis);
         
         if (!itemName && analysis.suggestedType) {
@@ -156,7 +221,14 @@ const ScanItem = () => {
         });
       } finally {
         setScanning(false);
+        setIsAnalyzing(false);
       }
+    } else {
+      toast({
+        title: "No image to analyze",
+        description: "Please upload an image first",
+        variant: "destructive",
+      });
     }
   };
   
@@ -630,14 +702,14 @@ const ScanItem = () => {
                       ))}
                     </div>
                     
-                    {!imageAnalysis && !imageSearchResults && images.length > 0 && (
+                    {!imageAnalysis && !imageSearchResults && images.length > 0 && !isAnalyzing && (
                       <Button 
                         variant="outline" 
                         className="mt-4 w-full"
-                        onClick={analyzeImages}
-                        disabled={scanning}
+                        onClick={() => analyzeImages()}
+                        disabled={scanning || isAnalyzing}
                       >
-                        {scanning ? (
+                        {scanning || isAnalyzing ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                             Analyzing Image...
@@ -649,6 +721,13 @@ const ScanItem = () => {
                           </>
                         )}
                       </Button>
+                    )}
+                    
+                    {isAnalyzing && (
+                      <div className="mt-4 text-center">
+                        <Loader2 className="h-8 w-8 mx-auto animate-spin text-collector-navy" />
+                        <p className="mt-2 text-sm text-gray-600">Analyzing image with AI...</p>
+                      </div>
                     )}
                   </div>
                 )}
@@ -686,7 +765,7 @@ const ScanItem = () => {
                 
                 <Button 
                   onClick={handleScan} 
-                  disabled={scanning || (!images.length && (!itemName || !category))}
+                  disabled={scanning || isAnalyzing || (!images.length && (!itemName || !category))}
                   className="w-full"
                 >
                   {scanning ? (
