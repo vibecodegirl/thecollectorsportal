@@ -68,7 +68,7 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-collector-navy to-collector-blue p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-collector-purple to-collector-cyan p-4">
       <div className="w-full max-w-md bg-white rounded-lg shadow-xl p-8">
         <div className="text-center mb-6">
           <div className="flex justify-center mb-4">
@@ -76,7 +76,7 @@ const ForgotPassword = () => {
               <Key className="h-7 w-7 text-white" />
             </div>
           </div>
-          <h1 className="text-2xl font-bold text-collector-navy mb-2">Reset Your Password</h1>
+          <h1 className="text-2xl font-bold text-collector-purple mb-2">Reset Your Password</h1>
           <p className="text-gray-600">
             {!isSuccess 
               ? "Enter your email address and we'll send you a link to reset your password."
@@ -110,7 +110,7 @@ const ForgotPassword = () => {
 
               <Button 
                 type="submit" 
-                className="w-full bg-collector-navy hover:bg-collector-blue" 
+                className="w-full bg-collector-purple hover:bg-purple-700" 
                 disabled={isSubmitting}
               >
                 {isSubmitting ? "Sending..." : "Send Reset Link"}
@@ -126,7 +126,7 @@ const ForgotPassword = () => {
         )}
 
         <div className="mt-4 text-center">
-          <Link to="/login" className="inline-flex items-center text-collector-cyan hover:text-collector-blue">
+          <Link to="/login" className="inline-flex items-center text-collector-cyan hover:text-collector-purple">
             <ArrowLeft className="mr-2 h-4 w-4" /> Back to Login
           </Link>
         </div>

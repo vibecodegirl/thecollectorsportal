@@ -50,14 +50,14 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-collector-navy to-collector-blue p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-collector-purple to-collector-cyan p-4">
       <div className="w-full max-w-md bg-white rounded-lg shadow-xl p-8">
         <div className="flex justify-center mb-6">
-          <div className="bg-collector-gold rounded-full p-3">
+          <div className="bg-collector-gold p-3 rounded-full">
             <User className="h-8 w-8 text-white" />
           </div>
         </div>
-        <h1 className="text-2xl font-bold text-center text-collector-navy mb-6">
+        <h1 className="text-2xl font-bold text-center text-collector-purple mb-6">
           Welcome Back
         </h1>
         
@@ -93,7 +93,7 @@ const Login = () => {
                     <FormLabel>Password</FormLabel>
                     <Link 
                       to="/forgot-password" 
-                      className="text-xs text-collector-cyan hover:text-collector-blue"
+                      className="text-xs text-collector-cyan hover:text-collector-purple"
                     >
                       Forgot password?
                     </Link>
@@ -116,7 +116,7 @@ const Login = () => {
             
             <Button
               type="submit"
-              className="w-full bg-collector-navy hover:bg-collector-blue"
+              className="w-full bg-collector-purple hover:bg-purple-700"
               disabled={isLoading}
             >
               {isLoading ? "Signing in..." : "Sign In"}
@@ -129,7 +129,7 @@ const Login = () => {
             Don't have an account?{" "}
             <Link
               to="/register"
-              className="text-collector-cyan hover:text-collector-blue font-medium"
+              className="text-collector-cyan hover:text-collector-purple font-medium"
             >
               Register
             </Link>

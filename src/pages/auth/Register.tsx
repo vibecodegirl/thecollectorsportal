@@ -33,16 +33,16 @@ const Register = () => {
 
   return (
     <MainLayout showHeader={false} showFooter={false}>
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-collector-purple to-collector-cyan p-4">
         <div className="mb-8 flex flex-col items-center">
           <Link to="/" className="flex items-center mb-4">
-            <Package className="h-10 w-10 text-collector-purple" />
-            <span className="text-3xl font-bold ml-2 bg-clip-text text-transparent bg-gradient-to-r from-collector-purple to-collector-cyan">
+            <Package className="h-10 w-10 text-collector-gold" />
+            <span className="text-3xl font-bold ml-2 bg-clip-text text-transparent bg-gradient-to-r from-collector-gold to-white">
               The Collectors Portal
             </span>
           </Link>
-          <h1 className="text-2xl font-bold text-center text-collector-purple">Create your Collectors Portal account</h1>
-          <p className="text-gray-600 mt-2 text-center">
+          <h1 className="text-2xl font-bold text-center text-white">Create your Collectors Portal account</h1>
+          <p className="text-gray-200 mt-2 text-center">
             Start organizing and valuing your collection today
           </p>
         </div>
@@ -109,7 +109,7 @@ const Register = () => {
               
               <p className="mt-4 text-center text-sm text-gray-600">
                 Already have an account?{' '}
-                <Link to="/login" className="text-primary hover:underline">
+                <Link to="/login" className="text-collector-cyan hover:text-collector-purple">
                   Log in
                 </Link>
               </p>
@@ -118,7 +118,7 @@ const Register = () => {
         </Card>
         
         <div className="mt-8">
-          <Link to="/" className="text-sm text-gray-600 hover:underline">
+          <Link to="/" className="text-sm text-white hover:text-collector-gold">
             ← Back to home
           </Link>
         </div>
