@@ -1,7 +1,20 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
-export const searchItemPrices = async (query: string): Promise<{ title: string, link: string, price?: string }[]> => {
+interface PriceRange {
+  low: number | null;
+  average: number | null;
+  high: number | null;
+  count: number;
+  all?: number[];
+}
+
+interface SearchResult {
+  items: { title: string, link: string, price?: string }[];
+  priceRanges?: PriceRange;
+}
+
+export const searchItemPrices = async (query: string): Promise<SearchResult> => {
   try {
     const response = await supabase.functions.invoke('search-prices', {
       body: { query }
@@ -10,18 +23,25 @@ export const searchItemPrices = async (query: string): Promise<{ title: string, 
     if (response.error) throw response.error;
     
     const data = response.data;
-    if (!data || !Array.isArray(data.items)) {
-      return [];
+    if (!data) {
+      return { items: [] };
     }
     
-    return data.items.map((item: any) => ({
-      title: item.title,
-      link: item.link,
-      price: item.pagemap?.offer?.[0]?.price || extractPriceFromSnippet(item.snippet)
-    })).filter((item: any) => item.price);
+    const items = Array.isArray(data.items) 
+      ? data.items.map((item: any) => ({
+          title: item.title,
+          link: item.link,
+          price: item.pagemap?.offer?.[0]?.price || extractPriceFromSnippet(item.snippet)
+        })).filter((item: any) => item.price)
+      : [];
+    
+    return {
+      items,
+      priceRanges: data.priceRanges
+    };
   } catch (error) {
     console.error("Error searching for item prices:", error);
-    return [];
+    return { items: [] };
   }
 };
 

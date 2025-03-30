@@ -21,7 +21,9 @@ const CollectionItemCard: React.FC<CollectionItemCardProps> = ({ item }) => {
       <CollectionItemImage 
         imageUrl={imageUrl} 
         itemName={item.name} 
-        category={item.category} 
+        category={item.category}
+        confidenceScore={item.confidenceScore}
+        condition={item.condition}
       />
       
       <CardHeader className="pb-2">
@@ -29,15 +31,16 @@ const CollectionItemCard: React.FC<CollectionItemCardProps> = ({ item }) => {
           <h3 className="font-semibold text-lg line-clamp-1">{item.name}</h3>
         </div>
         <p className="text-sm text-muted-foreground line-clamp-1">
-          {item.manufacturer} • {item.yearProduced}
+          {item.manufacturer ? item.manufacturer : 'Unknown manufacturer'} • {item.yearProduced ? item.yearProduced : 'Unknown year'}
         </p>
       </CardHeader>
       
       <CardContent className="pb-2 flex-grow">
-        <div className="flex justify-between items-center mb-2">
-          <ConfidenceBadge confidenceScore={item.confidenceScore} />
-          <Badge variant="outline">{item.condition}</Badge>
-        </div>
+        {item.type && (
+          <Badge variant="outline" className="mb-2">
+            {item.type}
+          </Badge>
+        )}
         
         <div className="mt-2">
           <PriceEstimateDisplay 

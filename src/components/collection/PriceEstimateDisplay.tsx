@@ -2,9 +2,9 @@
 import React, { useState } from 'react';
 import { PriceEstimate } from '@/types/collection';
 import { Button } from '@/components/ui/button';
-import { Search } from 'lucide-react';
+import { Search, Loader2, ExternalLink } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
-import { searchItemPrices } from '@/services/collectionService';
+import { searchItemPrices } from '@/services/collection/priceService';
 import {
   Sheet,
   SheetContent,
@@ -12,7 +12,9 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
+  SheetFooter,
 } from "@/components/ui/sheet";
+import { Badge } from '@/components/ui/badge';
 
 interface PriceEstimateDisplayProps {
   priceEstimate: PriceEstimate;
@@ -38,6 +40,8 @@ const PriceEstimateDisplay: React.FC<PriceEstimateDisplayProps> = ({
 }) => {
   const [searchResults, setSearchResults] = useState<Array<{ title: string; link: string; price?: string }>>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [priceRanges, setPriceRanges] = useState<{ low: number | null; average: number | null; high: number | null; count: number } | null>(null);
   const { toast } = useToast();
 
   const handlePriceSearch = async () => {
@@ -57,10 +61,17 @@ const PriceEstimateDisplay: React.FC<PriceEstimateDisplayProps> = ({
         ? `${itemName} ${itemCategory}`
         : itemName;
         
-      const results = await searchItemPrices(searchQuery);
-      setSearchResults(results);
+      const result = await searchItemPrices(searchQuery);
       
-      if (results.length === 0) {
+      if (result.priceRanges) {
+        setPriceRanges(result.priceRanges);
+      }
+      
+      if (result.items) {
+        setSearchResults(result.items);
+      }
+      
+      if (!result.items || result.items.length === 0) {
         toast({
           title: "No results found",
           description: "No price information found for this item",
@@ -78,6 +89,13 @@ const PriceEstimateDisplay: React.FC<PriceEstimateDisplayProps> = ({
     }
   };
 
+  const onSheetOpenChange = (open: boolean) => {
+    setIsSheetOpen(open);
+    if (open && searchResults.length === 0 && !isLoading) {
+      handlePriceSearch();
+    }
+  };
+
   return (
     <div className="space-y-1">
       <div className="font-semibold text-lg">
@@ -87,49 +105,74 @@ const PriceEstimateDisplay: React.FC<PriceEstimateDisplayProps> = ({
         </span>
         
         {itemName && (
-          <Sheet>
+          <Sheet open={isSheetOpen} onOpenChange={onSheetOpenChange}>
             <SheetTrigger asChild>
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="ml-2" 
-                onClick={(e) => {
-                  e.preventDefault();
-                  if (searchResults.length === 0) {
-                    handlePriceSearch();
-                  }
-                }}
+                className="ml-2"
               >
                 <Search className="h-4 w-4 mr-1" />
-                Search
+                Compare Prices
               </Button>
             </SheetTrigger>
-            <SheetContent>
+            <SheetContent className="w-full sm:max-w-md">
               <SheetHeader>
                 <SheetTitle>Price Comparison</SheetTitle>
                 <SheetDescription>
-                  Market prices for similar items
+                  Market prices for {itemName} {itemCategory ? `(${itemCategory})` : ''}
                 </SheetDescription>
               </SheetHeader>
               
+              {priceRanges && priceRanges.count > 0 && (
+                <div className="mt-6 p-4 bg-muted rounded-md">
+                  <h4 className="text-sm font-medium mb-2">Price Range Analysis</h4>
+                  <div className="grid grid-cols-3 gap-3 text-center">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Low</p>
+                      <p className="font-medium">{priceRanges.low !== null ? formatCurrency(priceRanges.low) : 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Average</p>
+                      <p className="font-medium">{priceRanges.average !== null ? formatCurrency(priceRanges.average) : 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">High</p>
+                      <p className="font-medium">{priceRanges.high !== null ? formatCurrency(priceRanges.high) : 'N/A'}</p>
+                    </div>
+                  </div>
+                  <div className="mt-2 text-center">
+                    <Badge variant="outline" className="text-xs">
+                      Based on {priceRanges.count} price points
+                    </Badge>
+                  </div>
+                </div>
+              )}
+              
               <div className="py-4">
+                <h3 className="font-medium text-sm mb-3">Market Listings</h3>
+                
                 {isLoading ? (
-                  <p className="text-center py-8 text-muted-foreground">Searching for prices...</p>
+                  <div className="flex justify-center items-center py-12">
+                    <Loader2 className="h-6 w-6 text-primary animate-spin" />
+                    <span className="ml-2">Searching for prices...</span>
+                  </div>
                 ) : searchResults.length > 0 ? (
-                  <div className="space-y-4">
+                  <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
                     {searchResults.map((result, index) => (
                       <div key={index} className="border-b pb-3">
                         <h3 className="font-medium line-clamp-2">{result.title}</h3>
                         {result.price && (
-                          <p className="text-sm font-semibold">{result.price}</p>
+                          <p className="text-sm font-semibold mt-1">{result.price}</p>
                         )}
                         <a 
                           href={result.link} 
                           target="_blank" 
                           rel="noopener noreferrer"
-                          className="text-xs text-blue-500 hover:underline"
+                          className="text-xs text-blue-500 hover:underline flex items-center mt-1"
                         >
-                          View item
+                          View listing
+                          <ExternalLink className="h-3 w-3 ml-1" />
                         </a>
                       </div>
                     ))}
@@ -150,6 +193,27 @@ const PriceEstimateDisplay: React.FC<PriceEstimateDisplayProps> = ({
                   </div>
                 )}
               </div>
+              
+              <SheetFooter className="mt-4">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handlePriceSearch}
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                      Searching...
+                    </>
+                  ) : (
+                    <>
+                      <Search className="h-4 w-4 mr-1" />
+                      Refresh Results
+                    </>
+                  )}
+                </Button>
+              </SheetFooter>
             </SheetContent>
           </Sheet>
         )}
