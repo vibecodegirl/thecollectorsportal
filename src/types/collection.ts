@@ -1,3 +1,4 @@
+
 export type ItemStatus = 'active' | 'archived' | 'sold';
 
 export interface PriceEstimate {
@@ -10,6 +11,10 @@ export interface PriceEstimate {
 export interface ConfidenceScore {
   score: number;
   level: 'low' | 'medium' | 'high';
+  factors?: {
+    factor: string;
+    impact: number;
+  }[];
 }
 
 export interface SaleInfo {

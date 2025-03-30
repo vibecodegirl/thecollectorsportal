@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { PriceEstimate } from '@/types/collection';
 import { Button } from '@/components/ui/button';
-import { Search, Loader2, ExternalLink, AlertCircle } from 'lucide-react';
+import { Search, Loader2, ExternalLink, AlertCircle, Info } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { searchItemPrices } from '@/services/collection/priceService';
 import {
@@ -16,13 +16,23 @@ import {
 } from "@/components/ui/sheet";
 import { Badge } from '@/components/ui/badge';
 import ConfidenceBadge from './ConfidenceBadge';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface PriceEstimateDisplayProps {
   priceEstimate: PriceEstimate;
   showDetails?: boolean;
   itemName?: string;
   itemCategory?: string;
-  confidenceScore?: { score: number; level: 'low' | 'medium' | 'high' };
+  confidenceScore?: { 
+    score: number; 
+    level: 'low' | 'medium' | 'high';
+    factors?: {factor: string, impact: number}[];
+  };
 }
 
 const formatCurrency = (amount: number) => {
@@ -30,7 +40,7 @@ const formatCurrency = (amount: number) => {
     style: 'currency',
     currency: 'USD',
     minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
+    maximumFractionDigits: 2,
   }).format(amount);
 };
 
@@ -41,7 +51,7 @@ const PriceEstimateDisplay: React.FC<PriceEstimateDisplayProps> = ({
   itemCategory = '',
   confidenceScore
 }) => {
-  const [searchResults, setSearchResults] = useState<Array<{ title: string; link: string; price?: string }>>([]);
+  const [searchResults, setSearchResults] = useState<Array<{ title: string; link: string; price?: string; source?: string; }>>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [priceRanges, setPriceRanges] = useState<{ 
@@ -49,7 +59,12 @@ const PriceEstimateDisplay: React.FC<PriceEstimateDisplayProps> = ({
     average: number | null; 
     high: number | null; 
     count: number;
-    confidenceScore?: { score: number; level: 'low' | 'medium' | 'high' };
+    lastUpdated?: Date;
+    confidenceScore?: { 
+      score: number; 
+      level: 'low' | 'medium' | 'high';
+      factors?: {factor: string, impact: number}[];
+    };
   } | null>(null);
   const { toast } = useToast();
 
@@ -107,7 +122,7 @@ const PriceEstimateDisplay: React.FC<PriceEstimateDisplayProps> = ({
 
   return (
     <div className="space-y-1">
-      <div className="font-semibold text-lg">
+      <div className="font-semibold text-lg flex items-center flex-wrap">
         {formatCurrency(priceEstimate.marketValue)}
         <span className="text-sm font-normal text-muted-foreground ml-1">
           est. value
@@ -115,7 +130,7 @@ const PriceEstimateDisplay: React.FC<PriceEstimateDisplayProps> = ({
         
         {confidenceScore && (
           <span className="ml-2">
-            <ConfidenceBadge confidenceScore={confidenceScore} />
+            <ConfidenceBadge confidenceScore={confidenceScore} showDetails={true} />
           </span>
         )}
         
@@ -141,7 +156,25 @@ const PriceEstimateDisplay: React.FC<PriceEstimateDisplayProps> = ({
               
               {priceRanges && priceRanges.count > 0 && (
                 <div className="mt-6 p-4 bg-muted rounded-md">
-                  <h4 className="text-sm font-medium mb-2">Price Range Analysis</h4>
+                  <div className="flex justify-between items-center mb-2">
+                    <h4 className="text-sm font-medium">Price Range Analysis</h4>
+                    {priceRanges.lastUpdated && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="text-xs text-muted-foreground flex items-center">
+                              <Info className="h-3 w-3 mr-1" />
+                              Updated {new Date(priceRanges.lastUpdated).toLocaleString()}
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="text-xs">Last price check time</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+                  </div>
+                  
                   <div className="grid grid-cols-3 gap-3 text-center">
                     <div>
                       <p className="text-xs text-muted-foreground">Low</p>
@@ -162,7 +195,7 @@ const PriceEstimateDisplay: React.FC<PriceEstimateDisplayProps> = ({
                     </Badge>
                     
                     {priceRanges.confidenceScore && (
-                      <ConfidenceBadge confidenceScore={priceRanges.confidenceScore} />
+                      <ConfidenceBadge confidenceScore={priceRanges.confidenceScore} showDetails={true} />
                     )}
                   </div>
                 </div>
@@ -181,9 +214,16 @@ const PriceEstimateDisplay: React.FC<PriceEstimateDisplayProps> = ({
                     {searchResults.map((result, index) => (
                       <div key={index} className="border-b pb-3">
                         <h3 className="font-medium line-clamp-2">{result.title}</h3>
-                        {result.price && (
-                          <p className="text-sm font-semibold mt-1">{result.price}</p>
-                        )}
+                        <div className="flex justify-between items-center mt-1">
+                          {result.price && (
+                            <p className="text-sm font-semibold">{result.price}</p>
+                          )}
+                          {result.source && (
+                            <Badge variant="outline" className="text-xs">
+                              {result.source}
+                            </Badge>
+                          )}
+                        </div>
                         <a 
                           href={result.link} 
                           target="_blank" 

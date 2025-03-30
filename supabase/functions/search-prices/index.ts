@@ -52,7 +52,7 @@ serve(async (req) => {
     console.log(`Searching for prices with query: ${query}`);
     
     // Enhanced search query for better price results
-    const enhancedQuery = `${query} price value for sale collectible`;
+    const enhancedQuery = constructEnhancedQuery(query);
     
     // Call the Google Custom Search JSON API
     const searchUrl = new URL("https://www.googleapis.com/customsearch/v1");
@@ -86,7 +86,7 @@ serve(async (req) => {
     const data = await response.json();
     
     // Extract price ranges from search results
-    const priceRanges = extractPriceRanges(data);
+    const priceRanges = extractPriceRanges(data, query);
     
     // Extract marketplace information
     const marketplace = extractMarketplaceInfo(data);
@@ -119,13 +119,50 @@ serve(async (req) => {
   }
 });
 
-// Function to extract price ranges from search results
-function extractPriceRanges(data) {
+// Construct enhanced search query based on original query
+function constructEnhancedQuery(query) {
+  // Add eBay and other marketplace terms for better price results
+  if (!query.toLowerCase().includes("ebay") && 
+      !query.toLowerCase().includes("sold") &&
+      !query.toLowerCase().includes("listing")) {
+    query += " ebay sold listing";
+  }
+  
+  // Add price-related terms if not present
+  if (!query.toLowerCase().includes("price") && 
+      !query.toLowerCase().includes("value") && 
+      !query.toLowerCase().includes("worth")) {
+    query += " price value worth";
+  }
+  
+  // Add collectible context if needed
+  if (!query.toLowerCase().includes("collectible") && 
+      !query.toLowerCase().includes("collection")) {
+    query += " collectible";
+  }
+  
+  return query;
+}
+
+// Improved function to extract price ranges from search results
+function extractPriceRanges(data, originalQuery) {
   const prices = [];
   const sources = [];
+  const conditions = [];
   
   if (!data.items || !Array.isArray(data.items)) {
     return { low: null, average: null, high: null, count: 0 };
+  }
+  
+  // Extract condition information from the original query if available
+  const conditionKeywords = ["mint", "near mint", "excellent", "very good", "good", "fair", "poor"];
+  let queryCondition = null;
+  
+  for (const condition of conditionKeywords) {
+    if (originalQuery.toLowerCase().includes(condition)) {
+      queryCondition = condition;
+      break;
+    }
   }
   
   // Extract prices from snippets, titles, and structured data
@@ -173,6 +210,11 @@ function extractPriceRanges(data) {
           if (!isNaN(price) && price > 0) {
             prices.push(price);
             sources.push(item.displayLink || 'offer');
+            
+            // Try to extract condition information
+            if (offer.itemCondition) {
+              conditions.push(offer.itemCondition);
+            }
           }
         }
       });
@@ -186,7 +228,29 @@ function extractPriceRanges(data) {
           if (!isNaN(price) && price > 0) {
             prices.push(price);
             sources.push(item.displayLink || 'product');
+            
+            // Try to extract condition information
+            if (product.condition) {
+              conditions.push(product.condition);
+            }
           }
+        }
+      });
+    }
+    
+    // Try to extract condition information from snippet or title
+    if (item.snippet) {
+      conditionKeywords.forEach(condition => {
+        if (item.snippet.toLowerCase().includes(condition)) {
+          conditions.push(condition);
+        }
+      });
+    }
+    
+    if (item.title) {
+      conditionKeywords.forEach(condition => {
+        if (item.title.toLowerCase().includes(condition)) {
+          conditions.push(condition);
         }
       });
     }
@@ -209,24 +273,21 @@ function extractPriceRanges(data) {
     return { low: null, average: null, high: null, count: 0 };
   }
   
-  // Calculate low, average, high
-  // For low and high, use 10th and 90th percentiles to avoid outliers
-  const low = validPrices.length >= 10 
-    ? validPrices[Math.floor(validPrices.length * 0.1)] 
-    : validPrices[0];
-    
-  const high = validPrices.length >= 10 
-    ? validPrices[Math.floor(validPrices.length * 0.9)] 
-    : validPrices[validPrices.length - 1];
+  // Use percentiles for more robust analysis
+  // For low, average, high, use 10th, 50th, and 90th percentiles
+  const low = getPercentile(validPrices, 10);
+  const median = getPercentile(validPrices, 50);
+  const high = getPercentile(validPrices, 90);
   
-  // Calculate average
+  // Calculate mean (traditional average)
   const sum = validPrices.reduce((total, price) => total + price, 0);
-  const average = sum / validPrices.length;
+  const mean = sum / validPrices.length;
   
   // Calculate weighted average based on source reliability
   const reputableDomains = [
     'ebay.com', 'amazon.com', 'sothebys.com', 'christies.com', 'ha.com', 
-    'heritage.com', 'bonhams.com', 'rubylane.com', 'worthpoint.com'
+    'heritage.com', 'bonhams.com', 'rubylane.com', 'worthpoint.com',
+    'catawiki.com', 'invaluable.com', 'liveauctioneers.com'
   ];
   
   // Calculate a weighted average giving more importance to reputable sources
@@ -242,25 +303,68 @@ function extractPriceRanges(data) {
       weight = 2;
     }
     
+    // Give extra weight to eBay (likely to have real market prices)
+    if (source && source.includes('ebay.com')) {
+      weight = 2.5;
+    }
+    
     weightedSum += price * weight;
     totalWeight += weight;
   });
   
-  const weightedAverage = totalWeight > 0 ? weightedSum / totalWeight : average;
+  const weightedAverage = totalWeight > 0 ? weightedSum / totalWeight : mean;
   
-  // Use the weighted average for market value
+  // Determine the most common condition if available
+  let mostCommonCondition = null;
+  if (conditions.length > 0) {
+    const conditionCounts = {};
+    conditions.forEach(cond => {
+      conditionCounts[cond] = (conditionCounts[cond] || 0) + 1;
+    });
+    
+    let maxCount = 0;
+    for (const [cond, count] of Object.entries(conditionCounts)) {
+      if (count > maxCount) {
+        maxCount = count;
+        mostCommonCondition = cond;
+      }
+    }
+  } else if (queryCondition) {
+    // Use condition from query if no condition found in results
+    mostCommonCondition = queryCondition;
+  }
+  
+  // Format prices to have two decimal places
+  const formatValue = (val) => {
+    return val !== null ? parseFloat(val.toFixed(2)) : null;
+  };
+  
+  // Use the weighted average for market value, and ensure all values have consistent decimal places
   return {
-    low,
-    average,
-    high,
-    marketValue: weightedAverage,
+    low: formatValue(low),
+    average: formatValue(mean),
+    median: formatValue(median),
+    high: formatValue(high),
+    marketValue: formatValue(weightedAverage),
     count: validPrices.length,
-    all: validPrices,
-    sources: validSources
+    all: validPrices.map(price => formatValue(price)),
+    sources: validSources,
+    condition: mostCommonCondition
   };
 }
 
+// Get percentile value from an array
+function getPercentile(array, percentile) {
+  if (array.length === 0) return null;
+  if (array.length === 1) return array[0];
+  
+  const index = Math.ceil((percentile / 100) * array.length) - 1;
+  return array[Math.max(0, Math.min(index, array.length - 1))];
+}
+
+// Improved price extraction from text with more supported formats
 function extractPricesFromText(text) {
+  if (!text) return [];
   const prices = [];
   
   // Match patterns like $123, $1,234.56, etc.
@@ -285,10 +389,21 @@ function extractPricesFromText(text) {
     }
   }
   
+  // Match EUR format
+  const euroRegex = /€\s*([0-9,]+(\.[0-9]{1,2})?)/g;
+  while ((match = euroRegex.exec(text)) !== null) {
+    const priceStr = match[1].replace(/,/g, '').replace(/\./g, '.');
+    const price = parseFloat(priceStr);
+    // Simple EUR to USD conversion (approximate)
+    if (!isNaN(price) && price > 0) {
+      prices.push(price * 1.1); // Approximate EUR to USD conversion
+    }
+  }
+  
   return prices;
 }
 
-// Function to extract marketplace information from search results
+// Enhanced marketplace information extraction
 function extractMarketplaceInfo(data) {
   if (!data.items || !Array.isArray(data.items)) {
     return [];
