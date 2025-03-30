@@ -5,6 +5,9 @@ import { MessageCircle, Mic, X } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 
+// Define the correct types based on the ElevenLabs API
+type Role = 'user' | 'agent';
+
 const VoiceAssistant = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Array<{ content: string; sender: 'user' | 'assistant' }>>([]);
@@ -12,6 +15,7 @@ const VoiceAssistant = () => {
   
   const conversation = useConversation({
     onMessage: (message) => {
+      // Use type assertion to handle the message source correctly
       if (message.source === 'agent') {
         setMessages(prev => [...prev, { content: message.message, sender: 'assistant' }]);
       } else if (message.source === 'user') {
