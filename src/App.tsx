@@ -7,6 +7,7 @@ import { Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { CollectionProvider } from "./contexts/CollectionContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import VoiceAssistant from "./components/voice/VoiceAssistant";
 
 // Pages
 import Index from "./pages/Index";
@@ -71,6 +72,10 @@ const App = () => (
             {/* Catch-all route */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          
+          {/* Voice Assistant */}
+          <VoiceAssistant />
+          
         </CollectionProvider>
       </AuthProvider>
     </TooltipProvider>
