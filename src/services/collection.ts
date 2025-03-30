@@ -2,7 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { CollectionItem, ItemStatus, SaleInfo } from '@/types/collection';
 import { searchItemPrices, getItemPriceEstimate } from './collection/priceService';
-import { transformDatabaseItemToCollectionItem } from '@/utils/collectionTransformers';
+import { transformDatabaseItemToCollectionItem, transformCollectionItemToDatabase } from '@/utils/collectionTransformers';
 
 // Get all collection items for a user
 export const getCollectionItems = async (userId: string): Promise<CollectionItem[]> => {
@@ -28,17 +28,13 @@ export const createCollectionItem = async (
   userId: string
 ): Promise<CollectionItem> => {
   try {
-    const now = new Date().toISOString();
-    const newItem = {
-      ...item,
-      user_id: userId,
-      dateAdded: now,
-      lastUpdated: now
-    };
+    // Transform item to database format
+    const dbItem = transformCollectionItemToDatabase(item, userId);
+    console.log("Saving item to database:", dbItem);
     
     const { data, error } = await supabase
       .from('collection_items')
-      .insert(newItem)
+      .insert(dbItem)
       .select('*')
       .single();
     
@@ -57,15 +53,13 @@ export const updateCollectionItem = async (
   userId: string
 ): Promise<CollectionItem> => {
   try {
-    const now = new Date().toISOString();
-    const updatedItem = {
-      ...item,
-      lastUpdated: now
-    };
+    // Transform item to database format
+    const dbItem = transformCollectionItemToDatabase({...item, id}, userId);
+    console.log("Updating item in database:", dbItem);
     
     const { data, error } = await supabase
       .from('collection_items')
-      .update(updatedItem)
+      .update(dbItem)
       .eq('id', id)
       .eq('user_id', userId)
       .select('*')
@@ -180,6 +174,20 @@ export const analyzeCollectionItem = async (request: {
       }
     }
     
+    // Make sure the confidence score is properly formatted
+    if (mergedData.confidenceScore) {
+      if (typeof mergedData.confidenceScore === 'object') {
+        mergedData.confidenceScore = {
+          score: Number(mergedData.confidenceScore.score || 70),
+          level: mergedData.confidenceScore.level || 'medium'
+        };
+      } else {
+        mergedData.confidenceScore = { score: 70, level: 'medium' };
+      }
+    } else {
+      mergedData.confidenceScore = { score: 70, level: 'medium' };
+    }
+    
     // Ensure we have default values for required fields
     return {
       category: mergedData.category || request.category || "Unknown",
@@ -188,7 +196,7 @@ export const analyzeCollectionItem = async (request: {
       condition: mergedData.condition || "Good",
       notes: mergedData.notes || request.description || "",
       priceEstimate: mergedData.priceEstimate || { low: 15, average: 30, high: 45, marketValue: 30 },
-      confidenceScore: mergedData.confidenceScore || { score: 70, level: "medium" },
+      confidenceScore: mergedData.confidenceScore,
       manufacturer: mergedData.manufacturer || "Unknown",
       yearProduced: mergedData.yearProduced || "Unknown",
       edition: mergedData.edition || "Standard",
