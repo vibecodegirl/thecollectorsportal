@@ -29,13 +29,14 @@ interface CollectionItemCardProps {
 const CollectionItemCard: React.FC<CollectionItemCardProps> = ({ item }) => {
   const defaultImage = 'https://images.unsplash.com/photo-1581092580497-e0d23cbdf1dc?ixlib=rb-1.2.1&auto=format&fit=crop&q=80&w=400&h=300';
   const imageUrl = item.images && item.images.length > 0 ? item.images[0] : defaultImage;
-  const { deleteItem, archiveItem } = useCollection();
+  const { deleteItem, archiveItem, refreshCollections } = useCollection();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isArchiveDialogOpen, setIsArchiveDialogOpen] = useState(false);
   
   const handleDelete = async () => {
     try {
       await deleteItem(item.id);
+      refreshCollections(); // Refresh the collection after deletion
     } catch (error) {
       console.error('Error deleting item:', error);
     }
@@ -44,6 +45,8 @@ const CollectionItemCard: React.FC<CollectionItemCardProps> = ({ item }) => {
   const handleArchive = async () => {
     try {
       await archiveItem(item.id);
+      refreshCollections(); // Refresh the collection after archiving
+      setIsArchiveDialogOpen(false);
     } catch (error) {
       console.error('Error archiving item:', error);
     }

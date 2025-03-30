@@ -60,7 +60,7 @@ import { Label } from "@/components/ui/label";
 
 const ItemDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const { getCollection, deleteItem, archiveItem, markItemAsSold } = useCollection();
+  const { getCollection, deleteItem, archiveItem, markItemAsSold, refreshCollections } = useCollection();
   const navigate = useNavigate();
   
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -103,6 +103,7 @@ const ItemDetail = () => {
   const handleArchive = async () => {
     try {
       await archiveItem(id);
+      refreshCollections(); // Refresh collections after archiving
       setArchiveDialogOpen(false);
     } catch (error) {
       console.error("Error archiving item:", error);
@@ -112,6 +113,7 @@ const ItemDetail = () => {
   const handleMarkAsSold = async () => {
     try {
       await markItemAsSold(id, saleInfo);
+      refreshCollections(); // Refresh collections after marking as sold
       setSellDialogOpen(false);
     } catch (error) {
       console.error("Error marking item as sold:", error);

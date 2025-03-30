@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useCollection } from '@/contexts/CollectionContext';
@@ -17,13 +16,18 @@ import { Camera, Filter, Plus, Search, SortAsc, SortDesc, Archive } from 'lucide
 import { ItemStatus } from '@/types/collection';
 
 const CollectionGallery = () => {
-  const { collections, loading, filteredCollections } = useCollection();
+  const { collections, loading, filteredCollections, refreshCollections } = useCollection();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
   const [filterStatus, setFilterStatus] = useState<ItemStatus | 'all'>('active');
   const [sortBy, setSortBy] = useState('dateAdded');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [filteredItems, setFilteredItems] = useState(collections);
+  
+  // Refresh collections when component mounts
+  useEffect(() => {
+    refreshCollections();
+  }, []);
   
   // Get unique categories and ensure none are empty strings
   const uniqueCategories = [...new Set(collections.map(item => item.category || 'Uncategorized'))];
