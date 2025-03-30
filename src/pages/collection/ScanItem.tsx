@@ -28,9 +28,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import CameraCapture from '@/components/camera/CameraCapture';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { debounce } from 'lodash';
+import { useGalleryNavigation } from '@/utils/navigation';
 
 const ScanItem = () => {
   const navigate = useNavigate();
+  const navigateToGallery = useGalleryNavigation();
   const { analyzeItem, analyzeImage, addItem, updateItem } = useCollection();
   const { user } = useAuth();
   
@@ -260,7 +262,7 @@ const ScanItem = () => {
         description: `${newItem.name} has been added to your collection`,
       });
       
-      navigate(`/collection`);
+      navigateToGallery();
     } catch (error) {
       console.error("Error saving item:", error);
       toast({
