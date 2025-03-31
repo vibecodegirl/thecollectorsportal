@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { ConfidenceScore } from '@/types/collection';
 
@@ -99,7 +98,6 @@ export const searchItemPrices = async (query: string): Promise<SearchResult> => 
   }
 };
 
-// Generate histogram data for visualizing price distribution
 const generateHistogramData = (prices: number[]) => {
   if (!prices || prices.length < 3) return undefined;
   
@@ -480,6 +478,30 @@ export const getItemPriceEstimate = async (item: {
     console.log("Searching for prices with query:", searchQuery);
     
     const result = await searchItemPrices(searchQuery);
+    
+    // If we got priceRanges, ensure all required fields are present
+    if (result.priceRanges) {
+      // Ensure we have default values for null or undefined fields
+      result.priceRanges.low = result.priceRanges.low || 0;
+      result.priceRanges.average = result.priceRanges.average || 0;
+      result.priceRanges.high = result.priceRanges.high || 0;
+      
+      // Ensure marketValue is set (use average if not available)
+      if (result.priceRanges.marketValue === null || result.priceRanges.marketValue === undefined) {
+        result.priceRanges.marketValue = result.priceRanges.average || 0;
+      }
+      
+      console.log("Returned price estimate:", result.priceRanges);
+    } else {
+      // Return a default price estimate if none was found
+      return {
+        low: 0,
+        average: 0,
+        high: 0,
+        marketValue: 0,
+        count: 0
+      };
+    }
     
     return result.priceRanges || null;
   } catch (error) {

@@ -70,24 +70,52 @@ const AddEditItem = () => {
     if (isEditing && id) {
       const item = getCollection(id);
       if (item) {
+        if (!item.priceEstimate) {
+          item.priceEstimate = emptyPriceEstimate;
+        } else {
+          item.priceEstimate = {
+            low: item.priceEstimate.low || 0,
+            average: item.priceEstimate.average || 0,
+            high: item.priceEstimate.high || 0,
+            marketValue: item.priceEstimate.marketValue || 0
+          };
+        }
+
+        if (!item.confidenceScore) {
+          item.confidenceScore = emptyConfidenceScore;
+        }
+
         setFormData(item);
       } else {
         navigate('/collection');
       }
     } else {
-      // Check if we have data from scan results in sessionStorage
       const editItemDataString = sessionStorage.getItem('editItemData');
       if (editItemDataString) {
         try {
           const editItemData = JSON.parse(editItemDataString);
+          
+          if (!editItemData.priceEstimate) {
+            editItemData.priceEstimate = emptyPriceEstimate;
+          } else {
+            editItemData.priceEstimate = {
+              low: editItemData.priceEstimate.low || 0,
+              average: editItemData.priceEstimate.average || 0,
+              high: editItemData.priceEstimate.high || 0,
+              marketValue: editItemData.priceEstimate.marketValue || 0
+            };
+          }
+
+          if (!editItemData.confidenceScore) {
+            editItemData.confidenceScore = emptyConfidenceScore;
+          }
+          
           setFormData(editItemData);
           
-          // If we have notes, add them to the AI description for potential future analysis
           if (editItemData.notes) {
             setAiDescription(editItemData.notes);
           }
           
-          // Clear the session storage after we've used it
           sessionStorage.removeItem('editItemData');
           
           toast({
@@ -99,7 +127,7 @@ const AddEditItem = () => {
         }
       }
     }
-  }, [isEditing, id, getCollection, navigate, user?.id]);
+  }, [isEditing, id, getCollection, navigate, user?.id, emptyPriceEstimate, emptyConfidenceScore]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -110,13 +138,21 @@ const AddEditItem = () => {
     const { name, value } = e.target;
     const numValue = value ? parseFloat(value) : 0;
     
-    setFormData(prev => ({
-      ...prev,
-      priceEstimate: {
+    console.log(`Updating price estimate: ${name} to ${numValue}`);
+
+    setFormData(prev => {
+      const updatedPriceEstimate = {
         ...prev.priceEstimate!,
         [name]: numValue
-      }
-    }));
+      };
+      
+      console.log("Updated price estimate:", updatedPriceEstimate);
+      
+      return {
+        ...prev,
+        priceEstimate: updatedPriceEstimate
+      };
+    });
   };
 
   const handleConfidenceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -141,8 +177,6 @@ const AddEditItem = () => {
     const files = e.target.files;
     if (!files) return;
 
-    // In a real app, we'd upload these to a server/storage
-    // For demo, we'll use local URLs
     const newImages = Array.from(files).map(file => URL.createObjectURL(file));
     
     setFormData(prev => ({
@@ -180,6 +214,17 @@ const AddEditItem = () => {
       
       const result = await analyzeItem(request);
       
+      if (!result.priceEstimate) {
+        result.priceEstimate = { ...emptyPriceEstimate };
+      } else {
+        result.priceEstimate = {
+          low: result.priceEstimate.low || 0,
+          average: result.priceEstimate.average || 0,
+          high: result.priceEstimate.high || 0,
+          marketValue: result.priceEstimate.marketValue || 0
+        };
+      }
+      
       setFormData(prev => ({
         ...prev,
         ...result
@@ -190,7 +235,6 @@ const AddEditItem = () => {
         description: "AI has analyzed your item and updated the form fields",
       });
       
-      // Move to the next tab
       setActiveTab('details');
     } catch (error) {
       toast({
@@ -217,19 +261,28 @@ const AddEditItem = () => {
         return;
       }
       
-      const itemData = {
+      const priceEstimate = formData.priceEstimate || emptyPriceEstimate;
+      const completeItemData = {
         ...formData,
-        userId: user.id
+        userId: user.id,
+        priceEstimate: {
+          low: priceEstimate.low || 0,
+          average: priceEstimate.average || 0,
+          high: priceEstimate.high || 0,
+          marketValue: priceEstimate.marketValue || 0
+        }
       } as CollectionItem;
       
+      console.log("Saving item with price estimate:", completeItemData.priceEstimate);
+      
       if (isEditing && id) {
-        await updateItem(itemData as CollectionItem);
+        await updateItem(completeItemData as CollectionItem);
         toast({
           title: "Item updated",
-          description: `${itemData.name} has been updated in your collection`,
+          description: `${completeItemData.name} has been updated in your collection`,
         });
       } else {
-        const newItem = await addItem(itemData);
+        const newItem = await addItem(completeItemData);
         toast({
           title: "Item added",
           description: `${newItem.name} has been added to your collection`,
@@ -272,7 +325,6 @@ const AddEditItem = () => {
               <TabsTrigger value="media">Images</TabsTrigger>
             </TabsList>
             
-            {/* Basic Info Tab */}
             <TabsContent value="basic">
               <div className="grid md:grid-cols-2 gap-8">
                 <Card>
@@ -391,7 +443,6 @@ const AddEditItem = () => {
               </div>
             </TabsContent>
             
-            {/* Details Tab */}
             <TabsContent value="details">
               <Card>
                 <CardHeader>
@@ -502,7 +553,6 @@ const AddEditItem = () => {
               </Card>
             </TabsContent>
             
-            {/* Condition Tab */}
             <TabsContent value="condition">
               <Card>
                 <CardHeader>
@@ -564,7 +614,6 @@ const AddEditItem = () => {
               </Card>
             </TabsContent>
             
-            {/* Provenance Tab */}
             <TabsContent value="provenance">
               <Card>
                 <CardHeader>
@@ -625,7 +674,6 @@ const AddEditItem = () => {
               </Card>
             </TabsContent>
             
-            {/* Value & Rarity Tab */}
             <TabsContent value="value">
               <Card>
                 <CardHeader>
@@ -743,7 +791,6 @@ const AddEditItem = () => {
               </Card>
             </TabsContent>
             
-            {/* Media Tab */}
             <TabsContent value="media">
               <Card>
                 <CardHeader>

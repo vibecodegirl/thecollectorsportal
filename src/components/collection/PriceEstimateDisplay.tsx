@@ -86,6 +86,14 @@ const PriceEstimateDisplay: React.FC<PriceEstimateDisplayProps> = ({
   } | null>(null);
   const { toast } = useToast();
 
+  // Ensure that priceEstimate has all required fields with proper values
+  const validatedPriceEstimate = {
+    low: priceEstimate?.low || 0,
+    average: priceEstimate?.average || 0,
+    high: priceEstimate?.high || 0,
+    marketValue: priceEstimate?.marketValue || 0
+  };
+
   const handlePriceSearch = async () => {
     if (!itemName) {
       toast({
@@ -177,7 +185,7 @@ const PriceEstimateDisplay: React.FC<PriceEstimateDisplayProps> = ({
   return (
     <div className="space-y-1">
       <div className="font-semibold text-lg flex items-center flex-wrap">
-        {formatCurrency(priceEstimate.marketValue)}
+        {formatCurrency(validatedPriceEstimate.marketValue || validatedPriceEstimate.average)}
         <span className="text-sm font-normal text-muted-foreground ml-1">
           est. value
         </span>
@@ -393,15 +401,15 @@ const PriceEstimateDisplay: React.FC<PriceEstimateDisplayProps> = ({
           <div className="grid grid-cols-3 gap-2">
             <div>
               <span className="block">Low</span>
-              <span>{formatCurrency(priceEstimate.low)}</span>
+              <span>{formatCurrency(validatedPriceEstimate.low)}</span>
             </div>
             <div>
               <span className="block">Average</span>
-              <span>{formatCurrency(priceEstimate.average)}</span>
+              <span>{formatCurrency(validatedPriceEstimate.average)}</span>
             </div>
             <div>
               <span className="block">High</span>
-              <span>{formatCurrency(priceEstimate.high)}</span>
+              <span>{formatCurrency(validatedPriceEstimate.high)}</span>
             </div>
           </div>
         </div>
