@@ -55,7 +55,14 @@ const mockCollections: CollectionItem[] = [
     },
     confidenceScore: {
       score: 85,
-      level: "high"
+      level: "high",
+      factors: [
+        { factor: "Category identified", impact: 10 },
+        { factor: "Year range estimated", impact: 15 },
+        { factor: "Condition assessed", impact: 20 },
+        { factor: "Rarity determined", impact: 15 },
+        { factor: "Market data available", impact: 18 }
+      ]
     },
     
     primaryObject: {
@@ -117,7 +124,14 @@ const mockCollections: CollectionItem[] = [
     },
     confidenceScore: {
       score: 92,
-      level: "high"
+      level: "high",
+      factors: [
+        { factor: "Category identified", impact: 10 },
+        { factor: "Year range estimated", impact: 15 },
+        { factor: "Condition assessed", impact: 20 },
+        { factor: "Rarity determined", impact: 15 },
+        { factor: "Market data available", impact: 18 }
+      ]
     },
     
     primaryObject: {
@@ -179,7 +193,14 @@ const mockCollections: CollectionItem[] = [
     },
     confidenceScore: {
       score: 65,
-      level: "medium"
+      level: "medium",
+      factors: [
+        { factor: "Category identified", impact: 10 },
+        { factor: "Year range estimated", impact: 15 },
+        { factor: "Condition assessed", impact: 20 },
+        { factor: "Rarity determined", impact: 15 },
+        { factor: "Market data available", impact: 18 }
+      ]
     },
     
     primaryObject: {
@@ -241,7 +262,14 @@ const mockCollections: CollectionItem[] = [
     },
     confidenceScore: {
       score: 40,
-      level: "low"
+      level: "low",
+      factors: [
+        { factor: "Category identified", impact: 10 },
+        { factor: "Year range estimated", impact: 15 },
+        { factor: "Condition assessed", impact: 20 },
+        { factor: "Rarity determined", impact: 15 },
+        { factor: "Market data available", impact: 18 }
+      ]
     },
     
     primaryObject: {
@@ -490,7 +518,17 @@ export const generateAIDescription = (request: AIAnalysisRequest): Promise<AIAna
           edition: 'Circulation Issue',
           condition: 'Very Fine to Extremely Fine',
           rarity: 'Uncommon',
-          confidenceScore: { score: 78, level: 'medium' }
+          confidenceScore: { 
+            score: 78, 
+            level: 'medium',
+            factors: [
+              { factor: "Category identified", impact: 10 },
+              { factor: "Year range estimated", impact: 15 },
+              { factor: "Condition assessed", impact: 20 },
+              { factor: "Rarity determined", impact: 15 },
+              { factor: "Market data available", impact: 18 }
+            ]
+          }
         },
         'Trading Cards': {
           category: 'Trading Cards',
@@ -500,7 +538,17 @@ export const generateAIDescription = (request: AIAnalysisRequest): Promise<AIAna
           edition: 'Base Set or Early Expansion',
           condition: 'Near Mint',
           rarity: 'Rare',
-          confidenceScore: { score: 82, level: 'high' }
+          confidenceScore: { 
+            score: 82, 
+            level: 'high',
+            factors: [
+              { factor: "Category identified", impact: 10 },
+              { factor: "Year range estimated", impact: 15 },
+              { factor: "Condition assessed", impact: 20 },
+              { factor: "Rarity determined", impact: 15 },
+              { factor: "Market data available", impact: 18 }
+            ]
+          }
         },
         'Action Figures': {
           category: 'Action Figures',
@@ -510,7 +558,17 @@ export const generateAIDescription = (request: AIAnalysisRequest): Promise<AIAna
           edition: 'Original Release',
           condition: 'Good to Very Good',
           rarity: 'Common',
-          confidenceScore: { score: 65, level: 'medium' }
+          confidenceScore: { 
+            score: 65, 
+            level: 'medium',
+            factors: [
+              { factor: "Category identified", impact: 10 },
+              { factor: "Year range estimated", impact: 15 },
+              { factor: "Condition assessed", impact: 20 },
+              { factor: "Rarity determined", impact: 15 },
+              { factor: "Market data available", impact: 18 }
+            ]
+          }
         },
         'Stamps': {
           category: 'Stamps',
@@ -520,7 +578,17 @@ export const generateAIDescription = (request: AIAnalysisRequest): Promise<AIAna
           edition: 'First Issue',
           condition: 'Fine',
           rarity: 'Uncommon',
-          confidenceScore: { score: 58, level: 'medium' }
+          confidenceScore: { 
+            score: 58, 
+            level: 'medium',
+            factors: [
+              { factor: "Category identified", impact: 10 },
+              { factor: "Year range estimated", impact: 15 },
+              { factor: "Condition assessed", impact: 20 },
+              { factor: "Rarity determined", impact: 15 },
+              { factor: "Market data available", impact: 18 }
+            ]
+          }
         },
         'Comics': {
           category: 'Comics',
@@ -530,7 +598,17 @@ export const generateAIDescription = (request: AIAnalysisRequest): Promise<AIAna
           edition: 'First Print',
           condition: 'Very Good',
           rarity: 'Uncommon',
-          confidenceScore: { score: 72, level: 'medium' }
+          confidenceScore: { 
+            score: 72, 
+            level: 'medium',
+            factors: [
+              { factor: "Category identified", impact: 10 },
+              { factor: "Year range estimated", impact: 15 },
+              { factor: "Condition assessed", impact: 20 },
+              { factor: "Rarity determined", impact: 15 },
+              { factor: "Market data available", impact: 18 }
+            ]
+          }
         },
         'Vinyl Records': {
           category: 'Vinyl Records',
@@ -540,7 +618,17 @@ export const generateAIDescription = (request: AIAnalysisRequest): Promise<AIAna
           edition: 'First Pressing',
           condition: 'Very Good Plus',
           rarity: 'Uncommon',
-          confidenceScore: { score: 68, level: 'medium' }
+          confidenceScore: { 
+            score: 68, 
+            level: 'medium',
+            factors: [
+              { factor: "Category identified", impact: 10 },
+              { factor: "Year range estimated", impact: 15 },
+              { factor: "Condition assessed", impact: 20 },
+              { factor: "Rarity determined", impact: 15 },
+              { factor: "Market data available", impact: 18 }
+            ]
+          }
         }
       };
       

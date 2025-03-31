@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { Configuration, OpenAIApi } from "https://esm.sh/openai@3.1.0";
 
@@ -120,7 +119,13 @@ serve(async (req) => {
       condition: determineCondition(description),
       notes: description || "",
       priceEstimate,
-      confidenceScore,
+      confidenceScore: {
+        score: confidenceScore.score,
+        level: confidenceScore.level,
+        factors: [
+          { factor: "Initial assessment", impact: 20 }
+        ]
+      },
       manufacturer: extractManufacturer(description, name),
       yearProduced: extractYearProduced(description),
       edition: description?.includes("limited") ? "Limited Edition" : 
@@ -147,6 +152,32 @@ serve(async (req) => {
       }
     };
     
+    // Add factors based on available data
+    if (description) {
+      analysisResult.confidenceScore.factors.push({ factor: "Description provided", impact: 15 });
+    }
+
+    if (category) {
+      analysisResult.confidenceScore.factors.push({ factor: "Category identified", impact: 10 });
+    }
+
+    if (images && images.length > 0) {
+      analysisResult.confidenceScore.factors.push({ factor: "Image analysis", impact: 15 });
+    }
+
+    if (analysisResult.manufacturer !== "Unknown") {
+      analysisResult.confidenceScore.factors.push({ factor: "Manufacturer identified", impact: 10 });
+    }
+
+    // Add pricing confidence factor if we found price data
+    if (priceEstimate.average > 0) {
+      const priceConfidenceImpact = confidenceScore.score >= 70 ? 15 : 10;
+      analysisResult.confidenceScore.factors.push({ 
+        factor: "Price data found", 
+        impact: priceConfidenceImpact 
+      });
+    }
+
     console.log("Returning analysis:", analysisResult);
     
     return new Response(

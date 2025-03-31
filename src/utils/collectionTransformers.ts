@@ -17,7 +17,8 @@ export const transformDatabaseItemToCollectionItem = (
     if (typeof cs === 'object' && 'score' in cs && 'level' in cs) {
       confidenceScore = {
         score: Number(cs.score),
-        level: cs.level as 'low' | 'medium' | 'high'
+        level: cs.level as 'low' | 'medium' | 'high',
+        factors: cs.factors || [] // Add factors if they exist
       };
     } else {
       // Fallback to calculating if format is incorrect
@@ -27,6 +28,10 @@ export const transformDatabaseItemToCollectionItem = (
     // Calculate if not present
     confidenceScore = calculateConfidenceScore(item);
   }
+  
+  // Determine market value based on estimated_value or calculate a dynamic value
+  const marketValue = item.estimated_value || 0;
+  const priceVariance = 0.2; // 20% variance for price ranges
   
   return {
     id: item.id,
@@ -54,10 +59,10 @@ export const transformDatabaseItemToCollectionItem = (
     weight: item.weight || '',
     rarity: item.rarity || '',
     priceEstimate: {
-      low: item.estimated_value ? item.estimated_value * 0.8 : 0,
-      average: item.estimated_value || 0,
-      high: item.estimated_value ? item.estimated_value * 1.2 : 0,
-      marketValue: item.estimated_value || 0
+      low: marketValue ? marketValue * (1 - priceVariance) : 0,
+      average: marketValue || 0,
+      high: marketValue ? marketValue * (1 + priceVariance) : 0,
+      marketValue: marketValue || 0
     },
     confidenceScore: confidenceScore,
     primaryObject: {
@@ -81,16 +86,74 @@ export const transformDatabaseItemToCollectionItem = (
  * Calculates a confidence score based on the available item data
  */
 const calculateConfidenceScore = (item: Tables<'collection_items'>): ConfidenceScore => {
-  let score = 50; // Base score
+  let score = 30; // Base score - set lower to be more conservative
+  let factors: {factor: string, impact: number}[] = [];
   
   // Add points for having more detailed information
-  if (item.name && item.name.length > 3) score += 5;
-  if (item.category) score += 5;
-  if (item.manufacturer) score += 5;
-  if (item.year_produced) score += 5;
-  if (item.condition) score += 5;
-  if (item.estimated_value && item.estimated_value > 0) score += 10;
-  if (item.image_url) score += 5;
+  if (item.name && item.name.length > 3) {
+    score += 5;
+    factors.push({factor: "Item name provided", impact: 5});
+  }
+  
+  if (item.category) {
+    score += 5;
+    factors.push({factor: "Category specified", impact: 5});
+  }
+  
+  if (item.manufacturer) {
+    score += 5;
+    factors.push({factor: "Manufacturer known", impact: 5});
+  }
+  
+  if (item.year_produced) {
+    score += 5;
+    factors.push({factor: "Production year known", impact: 5});
+  }
+  
+  if (item.condition) {
+    score += 5;
+    factors.push({factor: "Condition specified", impact: 5});
+  }
+  
+  if (item.estimated_value && item.estimated_value > 0) {
+    // Graduated scoring based on value reliability
+    const valueImpact = 10;
+    score += valueImpact;
+    factors.push({factor: "Estimated value provided", impact: valueImpact});
+  }
+  
+  if (item.image_url) {
+    score += 5;
+    factors.push({factor: "Image provided", impact: 5});
+  }
+  
+  // Add points for detailed descriptions
+  if (item.description && item.description.length > 50) {
+    const descriptionImpact = 5;
+    score += descriptionImpact;
+    factors.push({factor: "Detailed description", impact: descriptionImpact});
+  }
+  
+  // Add points for historical information
+  if (item.previous_owners || item.acquisition_source) {
+    const historyImpact = 5;
+    score += historyImpact;
+    factors.push({factor: "Historical information", impact: historyImpact});
+  }
+  
+  // Add points for physical details
+  if (item.dimensions || item.weight) {
+    const physicalImpact = 5;
+    score += physicalImpact;
+    factors.push({factor: "Physical specifications", impact: physicalImpact});
+  }
+  
+  // Add points for rarity information
+  if (item.rarity) {
+    const rarityImpact = 5;
+    score += rarityImpact;
+    factors.push({factor: "Rarity specified", impact: rarityImpact});
+  }
   
   // Cap score at 100
   score = Math.min(score, 100);
@@ -101,7 +164,7 @@ const calculateConfidenceScore = (item: Tables<'collection_items'>): ConfidenceS
   else if (score < 70) level = 'medium';
   else level = 'high';
   
-  return { score, level };
+  return { score, level, factors };
 };
 
 /**
@@ -130,7 +193,8 @@ export const transformCollectionItemToDatabase = (item: Partial<CollectionItem>,
   // Ensure confidenceScore is properly formatted for database storage
   const confidenceScore = item.confidenceScore ? {
     score: item.confidenceScore.score,
-    level: item.confidenceScore.level
+    level: item.confidenceScore.level,
+    factors: item.confidenceScore.factors || []
   } : null;
   
   // Construct the database object with the correct field mappings
