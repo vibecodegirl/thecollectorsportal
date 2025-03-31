@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
@@ -218,19 +219,6 @@ const ScanItem = () => {
         }
       }
       
-      if (!scanResult.priceEstimate || 
-          (scanResult.priceEstimate.marketValue === 0 && 
-           scanResult.priceEstimate.low === 0 && 
-           scanResult.priceEstimate.high === 0 && 
-           scanResult.priceEstimate.average === 0)) {
-        scanResult.priceEstimate = {
-          marketValue: 0,
-          low: 0,
-          high: 0,
-          average: 0
-        };
-      }
-      
       setScanResults(scanResult);
       setEditableItem(scanResult);
       setActiveStep(2);
@@ -256,6 +244,7 @@ const ScanItem = () => {
     setSaving(true);
     
     try {
+      // Create a filtered item object that removes properties that might cause issues
       const { autoSaved, ...cleanedItemData } = editableItem as any;
       
       const itemData: Partial<CollectionItem> = {
@@ -313,21 +302,8 @@ const ScanItem = () => {
   const handleFieldChange = (field: string, value: any) => {
     if (!editableItem) return;
     
-    if (field === 'priceEstimate') {
-      setEditableItem(prevItem => ({
-        ...prevItem,
-        priceEstimate: {
-          ...prevItem.priceEstimate,
-          marketValue: parseFloat(value),
-          average: parseFloat(value),
-          low: parseFloat(value) * 0.8,
-          high: parseFloat(value) * 1.2
-        }
-      }));
-    } else {
-      const updatedItem = { ...editableItem, [field]: value };
-      setEditableItem(updatedItem);
-    }
+    const updatedItem = { ...editableItem, [field]: value };
+    setEditableItem(updatedItem);
   };
   
   const formatCurrency = (amount: number) => {
@@ -753,20 +729,10 @@ const ScanItem = () => {
                     {renderEditableField('Category', 'category', editableItem.category)}
                     
                     <div className="flex justify-between">
-                      <div className="w-full">
-                        <p className="text-sm text-gray-500 mb-1">Estimated Value ($)</p>
-                        <Input
-                          id="marketValue"
-                          type="number"
-                          min="0"
-                          value={editableItem.priceEstimate?.marketValue || 0}
-                          onChange={(e) => handleFieldChange('priceEstimate', e.target.value)}
-                          className="w-full"
-                        />
-                        {editableItem.priceEstimate && editableItem.priceEstimate.marketValue > 0 && (
-                          <div className="mt-2 text-xs text-gray-500">
-                            <div>Range: {formatCurrency(editableItem.priceEstimate.low)} - {formatCurrency(editableItem.priceEstimate.high)}</div>
-                          </div>
+                      <div>
+                        <p className="text-sm text-gray-500 mb-1">Estimated Value</p>
+                        {renderEditableField('Market Value', 'priceEstimate', 
+                          editableItem.priceEstimate ? formatCurrency(editableItem.priceEstimate.marketValue || 0).replace('$', '') : '0'
                         )}
                       </div>
                       
@@ -778,30 +744,6 @@ const ScanItem = () => {
                             'confidence-low'}`}>
                           {editableItem.confidenceScore?.score || 0}% ({editableItem.confidenceScore?.level || 'low'})
                         </div>
-                        {editableItem.confidenceScore?.factors && editableItem.confidenceScore.factors.length > 0 && (
-                          <div className="mt-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-xs"
-                              onClick={() => toast({
-                                title: "Confidence Factors",
-                                description: (
-                                  <div className="mt-2 space-y-1">
-                                    {editableItem.confidenceScore?.factors?.map((factor, i) => (
-                                      <div key={i} className="flex justify-between">
-                                        <span>{factor.factor}</span>
-                                        <span>+{factor.impact}</span>
-                                      </div>
-                                    ))}
-                                  </div>
-                                ),
-                              })}
-                            >
-                              View Factors
-                            </Button>
-                          </div>
-                        )}
                       </div>
                     </div>
                   </div>
