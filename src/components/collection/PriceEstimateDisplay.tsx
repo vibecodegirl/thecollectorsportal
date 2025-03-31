@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { PriceEstimate } from '@/types/collection';
 import { Button } from '@/components/ui/button';
-import { Search, Loader2, ExternalLink, AlertCircle, Info } from 'lucide-react';
+import { Search, Loader2, ExternalLink, AlertCircle, Info, TrendingUp, DollarSign } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { searchItemPrices } from '@/services/collection/priceService';
 import {
@@ -22,6 +22,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Card } from '@/components/ui/card';
 
 interface PriceEstimateDisplayProps {
   priceEstimate: PriceEstimate;
@@ -58,12 +59,29 @@ const PriceEstimateDisplay: React.FC<PriceEstimateDisplayProps> = ({
     low: number | null; 
     average: number | null; 
     high: number | null; 
+    median?: number | null;
     count: number;
+    filteredCount?: number;
     lastUpdated?: Date;
+    histogramData?: {
+      buckets: {min: number, max: number, count: number}[], 
+      range: {min: number, max: number}
+    };
     confidenceScore?: { 
       score: number; 
       level: 'low' | 'medium' | 'high';
       factors?: {factor: string, impact: number}[];
+    };
+    tukeysLimits?: {
+      lower: number | null;
+      upper: number | null;
+    };
+    percentiles?: {
+      p10: number | null;
+      p25: number | null;
+      p50: number | null;
+      p75: number | null;
+      p90: number | null;
     };
   } | null>(null);
   const { toast } = useToast();
@@ -119,6 +137,42 @@ const PriceEstimateDisplay: React.FC<PriceEstimateDisplayProps> = ({
       handlePriceSearch();
     }
   };
+  
+  // Simple price distribution chart using bars
+  const PriceDistributionChart = ({ histogramData }) => {
+    if (!histogramData || !histogramData.buckets || histogramData.buckets.length === 0) {
+      return null;
+    }
+    
+    const maxCount = Math.max(...histogramData.buckets.map(b => b.count));
+    
+    return (
+      <div className="mt-2">
+        <h5 className="text-xs font-medium mb-1 text-muted-foreground">Price Distribution</h5>
+        <div className="flex items-end h-20 gap-1">
+          {histogramData.buckets.map((bucket, index) => {
+            const heightPercent = maxCount > 0 ? (bucket.count / maxCount) * 100 : 0;
+            return (
+              <div key={index} className="flex flex-col items-center flex-1">
+                <div 
+                  className="bg-collector-purple rounded-t w-full" 
+                  style={{ 
+                    height: `${heightPercent}%`,
+                    minHeight: bucket.count > 0 ? '4px' : '0'
+                  }}
+                  title={`${bucket.min} - ${bucket.max}: ${bucket.count} items`}
+                />
+              </div>
+            );
+          })}
+        </div>
+        <div className="flex justify-between mt-1">
+          <span className="text-xs">{formatCurrency(histogramData.range.min)}</span>
+          <span className="text-xs">{formatCurrency(histogramData.range.max)}</span>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-1">
@@ -146,7 +200,7 @@ const PriceEstimateDisplay: React.FC<PriceEstimateDisplayProps> = ({
                 Compare Prices
               </Button>
             </SheetTrigger>
-            <SheetContent className="w-full sm:max-w-md">
+            <SheetContent className="w-full sm:max-w-md overflow-y-auto">
               <SheetHeader>
                 <SheetTitle>Price Comparison</SheetTitle>
                 <SheetDescription>
@@ -157,7 +211,7 @@ const PriceEstimateDisplay: React.FC<PriceEstimateDisplayProps> = ({
               {priceRanges && priceRanges.count > 0 && (
                 <div className="mt-6 p-4 bg-muted rounded-md">
                   <div className="flex justify-between items-center mb-2">
-                    <h4 className="text-sm font-medium">Price Range Analysis</h4>
+                    <h4 className="text-sm font-medium">Price Analysis</h4>
                     {priceRanges.lastUpdated && (
                       <TooltipProvider>
                         <Tooltip>
@@ -175,23 +229,69 @@ const PriceEstimateDisplay: React.FC<PriceEstimateDisplayProps> = ({
                     )}
                   </div>
                   
-                  <div className="grid grid-cols-3 gap-3 text-center">
+                  {/* Price distribution chart */}
+                  {priceRanges.histogramData && (
+                    <PriceDistributionChart histogramData={priceRanges.histogramData} />
+                  )}
+                  
+                  <div className="grid grid-cols-3 gap-3 text-center mt-3">
                     <div>
                       <p className="text-xs text-muted-foreground">Low</p>
                       <p className="font-medium">{priceRanges.low !== null ? formatCurrency(priceRanges.low) : 'N/A'}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">Average</p>
-                      <p className="font-medium">{priceRanges.average !== null ? formatCurrency(priceRanges.average) : 'N/A'}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {priceRanges.median !== null ? 'Median' : 'Average'}
+                      </p>
+                      <p className="font-medium">
+                        {priceRanges.median !== null 
+                          ? formatCurrency(priceRanges.median) 
+                          : priceRanges.average !== null 
+                            ? formatCurrency(priceRanges.average) 
+                            : 'N/A'}
+                      </p>
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">High</p>
                       <p className="font-medium">{priceRanges.high !== null ? formatCurrency(priceRanges.high) : 'N/A'}</p>
                     </div>
                   </div>
-                  <div className="mt-2 flex justify-between items-center">
+                  
+                  {/* Percentiles if available */}
+                  {priceRanges.percentiles && priceRanges.count >= 5 && (
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <h5 className="text-xs font-medium mb-2">Percentiles</h5>
+                      <div className="grid grid-cols-5 gap-1 text-center">
+                        <div>
+                          <p className="text-xs text-muted-foreground">10%</p>
+                          <p className="text-xs">{priceRanges.percentiles.p10 !== null ? formatCurrency(priceRanges.percentiles.p10) : 'N/A'}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">25%</p>
+                          <p className="text-xs">{priceRanges.percentiles.p25 !== null ? formatCurrency(priceRanges.percentiles.p25) : 'N/A'}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">50%</p>
+                          <p className="text-xs">{priceRanges.percentiles.p50 !== null ? formatCurrency(priceRanges.percentiles.p50) : 'N/A'}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">75%</p>
+                          <p className="text-xs">{priceRanges.percentiles.p75 !== null ? formatCurrency(priceRanges.percentiles.p75) : 'N/A'}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">90%</p>
+                          <p className="text-xs">{priceRanges.percentiles.p90 !== null ? formatCurrency(priceRanges.percentiles.p90) : 'N/A'}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="mt-3 flex justify-between items-center">
                     <Badge variant="outline" className="text-xs">
                       Based on {priceRanges.count} price points
+                      {priceRanges.filteredCount !== undefined && priceRanges.filteredCount !== priceRanges.count && (
+                        <> ({priceRanges.filteredCount} after filtering)</>
+                      )}
                     </Badge>
                     
                     {priceRanges.confidenceScore && (

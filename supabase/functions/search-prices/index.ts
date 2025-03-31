@@ -85,7 +85,7 @@ serve(async (req) => {
     
     const data = await response.json();
     
-    // Extract price ranges from search results
+    // Extract price ranges from search results with improved algorithm
     const priceRanges = extractPriceRanges(data, query);
     
     // Extract marketplace information
@@ -121,27 +121,36 @@ serve(async (req) => {
 
 // Construct enhanced search query based on original query
 function constructEnhancedQuery(query) {
-  // Add eBay and other marketplace terms for better price results
-  if (!query.toLowerCase().includes("ebay") && 
-      !query.toLowerCase().includes("sold") &&
-      !query.toLowerCase().includes("listing")) {
-    query += " ebay sold listing";
+  const baseQuery = query.trim();
+  
+  // Don't modify if query is already very long
+  if (baseQuery.length > 70) {
+    return baseQuery;
   }
   
-  // Add price-related terms if not present
-  if (!query.toLowerCase().includes("price") && 
-      !query.toLowerCase().includes("value") && 
-      !query.toLowerCase().includes("worth")) {
-    query += " price value worth";
+  let enhancedQuery = baseQuery;
+  
+  // Add marketplace terms if missing
+  if (!enhancedQuery.toLowerCase().includes("ebay") && 
+      !enhancedQuery.toLowerCase().includes("sold") &&
+      !enhancedQuery.toLowerCase().includes("listing")) {
+    enhancedQuery += " ebay sold listing";
+  }
+  
+  // Add price-related terms if missing
+  if (!enhancedQuery.toLowerCase().includes("price") && 
+      !enhancedQuery.toLowerCase().includes("value") && 
+      !enhancedQuery.toLowerCase().includes("worth")) {
+    enhancedQuery += " price value worth";
   }
   
   // Add collectible context if needed
-  if (!query.toLowerCase().includes("collectible") && 
-      !query.toLowerCase().includes("collection")) {
-    query += " collectible";
+  if (!enhancedQuery.toLowerCase().includes("collectible") && 
+      !enhancedQuery.toLowerCase().includes("collection")) {
+    enhancedQuery += " collectible";
   }
   
-  return query;
+  return enhancedQuery;
 }
 
 // Improved function to extract price ranges from search results
@@ -261,6 +270,7 @@ function extractPriceRanges(data, originalQuery) {
   const validSources = [];
   
   prices.forEach((price, index) => {
+    // Filter out extreme values to reduce impact of outliers
     if (!isNaN(price) && price > 0 && price < 100000) { // Add upper limit to filter out anomalies
       validPrices.push(price);
       validSources.push(sources[index]);
@@ -273,13 +283,17 @@ function extractPriceRanges(data, originalQuery) {
     return { low: null, average: null, high: null, count: 0 };
   }
   
-  // Use percentiles for more robust analysis
-  // For low, average, high, use 10th, 50th, and 90th percentiles
-  const low = getPercentile(validPrices, 10);
-  const median = getPercentile(validPrices, 50);
-  const high = getPercentile(validPrices, 90);
+  // Use trimmed mean to reduce impact of outliers
+  const trimmedMean = calculateTrimmedMean(validPrices);
   
-  // Calculate mean (traditional average)
+  // Use percentiles for more robust analysis
+  const percentile10 = getPercentile(validPrices, 10);
+  const percentile25 = getPercentile(validPrices, 25);
+  const median = getPercentile(validPrices, 50);
+  const percentile75 = getPercentile(validPrices, 75);
+  const percentile90 = getPercentile(validPrices, 90);
+  
+  // Calculate standard mean (traditional average)
   const sum = validPrices.reduce((total, price) => total + price, 0);
   const mean = sum / validPrices.length;
   
@@ -289,6 +303,16 @@ function extractPriceRanges(data, originalQuery) {
     'heritage.com', 'bonhams.com', 'rubylane.com', 'worthpoint.com',
     'catawiki.com', 'invaluable.com', 'liveauctioneers.com'
   ];
+  
+  // Apply Tukey's Fences method to identify outliers
+  const iqr = percentile75 - percentile25;
+  const lowerFence = percentile25 - 1.5 * iqr;
+  const upperFence = percentile75 + 1.5 * iqr;
+  
+  // Filter outliers using Tukey's method
+  const filteredPrices = validPrices.filter(price => 
+    price >= lowerFence && price <= upperFence
+  );
   
   // Calculate a weighted average giving more importance to reputable sources
   let weightedSum = 0;
@@ -308,11 +332,29 @@ function extractPriceRanges(data, originalQuery) {
       weight = 2.5;
     }
     
+    // Lower weight for values that appear to be outliers by Tukey's method
+    if (price < lowerFence || price > upperFence) {
+      weight *= 0.5;
+    }
+    
     weightedSum += price * weight;
     totalWeight += weight;
   });
   
   const weightedAverage = totalWeight > 0 ? weightedSum / totalWeight : mean;
+  
+  // Calculate the most robust market value using multiple methods
+  let marketValue;
+  if (filteredPrices.length >= 5) {
+    // If we have enough filtered data points, use the trimmed mean
+    marketValue = calculateTrimmedMean(filteredPrices);
+  } else if (validPrices.length >= 3) {
+    // With 3+ data points, use median for robustness
+    marketValue = median;
+  } else {
+    // For very small samples, use weighted average
+    marketValue = weightedAverage;
+  }
   
   // Determine the most common condition if available
   let mostCommonCondition = null;
@@ -339,18 +381,42 @@ function extractPriceRanges(data, originalQuery) {
     return val !== null ? parseFloat(val.toFixed(2)) : null;
   };
   
-  // Use the weighted average for market value, and ensure all values have consistent decimal places
+  // Return comprehensive price information
   return {
-    low: formatValue(low),
+    low: formatValue(percentile10),
     average: formatValue(mean),
+    trimmedMean: formatValue(trimmedMean),
     median: formatValue(median),
-    high: formatValue(high),
-    marketValue: formatValue(weightedAverage),
+    high: formatValue(percentile90),
+    marketValue: formatValue(marketValue),
     count: validPrices.length,
+    filteredCount: filteredPrices.length,
     all: validPrices.map(price => formatValue(price)),
     sources: validSources,
-    condition: mostCommonCondition
+    condition: mostCommonCondition,
+    percentiles: {
+      p10: formatValue(percentile10),
+      p25: formatValue(percentile25),
+      p50: formatValue(median),
+      p75: formatValue(percentile75),
+      p90: formatValue(percentile90)
+    },
+    tukeysLimits: {
+      lower: formatValue(lowerFence),
+      upper: formatValue(upperFence)
+    }
   };
+}
+
+// Calculate trimmed mean (removing top and bottom x%)
+function calculateTrimmedMean(values, trimPercent = 10) {
+  if (values.length <= 2) return values.reduce((sum, val) => sum + val, 0) / values.length;
+  
+  const sortedValues = [...values].sort((a, b) => a - b);
+  const trimCount = Math.floor(values.length * (trimPercent / 100));
+  
+  const trimmedValues = sortedValues.slice(trimCount, sortedValues.length - trimCount);
+  return trimmedValues.reduce((sum, val) => sum + val, 0) / trimmedValues.length;
 }
 
 // Get percentile value from an array
@@ -400,6 +466,21 @@ function extractPricesFromText(text) {
     }
   }
   
+  // Match price ranges (e.g., "$100-$200")
+  const rangeRegex = /\$\s*([0-9,]+(\.[0-9]{1,2})?)\s*-\s*\$\s*([0-9,]+(\.[0-9]{1,2})?)/g;
+  while ((match = rangeRegex.exec(text)) !== null) {
+    const lowPriceStr = match[1].replace(/,/g, '');
+    const highPriceStr = match[3].replace(/,/g, '');
+    const lowPrice = parseFloat(lowPriceStr);
+    const highPrice = parseFloat(highPriceStr);
+    
+    if (!isNaN(lowPrice) && !isNaN(highPrice) && lowPrice > 0 && highPrice > 0) {
+      // Use the average of the range
+      const avgPrice = (lowPrice + highPrice) / 2;
+      prices.push(avgPrice);
+    }
+  }
+  
   return prices;
 }
 
@@ -431,7 +512,11 @@ function extractMarketplaceInfo(data) {
     { domain: "shopgoodwill.com", name: "ShopGoodwill" },
     { domain: "proxibid.com", name: "Proxibid" },
     { domain: "walmart.com", name: "Walmart" },
-    { domain: "target.com", name: "Target" }
+    { domain: "target.com", name: "Target" },
+    { domain: "abebooks.com", name: "AbeBooks" },
+    { domain: "justcollecting.com", name: "JustCollecting" },
+    { domain: "hemmings.com", name: "Hemmings" },
+    { domain: "philipps.com", name: "Phillips" }
   ];
   
   // Process each search result
